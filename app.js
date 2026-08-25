@@ -208,13 +208,18 @@
     var html = '';
     html += monthSwitcher();
     html += '<div class="stat-grid" style="grid-template-columns:repeat(3,1fr)">' +
-      statCardMini('Entradas', F.formatBRL(s.totalIncome), 'pos') +
+      statCardMini('Entradas', F.formatBRL(s.recebidos), s.recebidos >= 0 ? 'pos' : 'neg') +
       statCardMini('Saídas', F.formatBRL(s.comprometido), 'neg') +
       statCardMini('Saldo do mês', F.formatBRL(s.saldoMes), s.saldoMes >= 0 ? 'pos' : 'neg') +
       '</div>';
 
-    html += '<div class="card"><div class="section-head"><span class="section-title">Entradas</span><span class="section-sub money">Total: ' + F.formatBRL(s.totalIncome) + '</span></div>' +
-      '<div class="tx-list" style="margin-top:12px">' + s.incomes.map(txRow).join('') + '</div></div>';
+    if (s.caixaAnterior !== 0) {
+      var prevMk = F.addMonths(monthCursor, -1);
+      html += '<div class="settings-row"><div class="settings-row-text"><div class="settings-row-title">Saldo trazido de ' + F.monthKeyToLabel(prevMk) + '</div><div class="settings-row-sub">Não é receita deste mês — soma direto no saldo do mês</div></div><span class="money ' + (s.caixaAnterior >= 0 ? 'pos' : 'neg') + '" style="font-weight:800;font-size:15px">' + F.formatBRL(s.caixaAnterior) + '</span></div>';
+    }
+
+    html += '<div class="card"><div class="section-head"><span class="section-title">Entradas</span><span class="section-sub money">Total: ' + F.formatBRL(s.recebidos) + '</span></div>' +
+      '<div class="tx-list" style="margin-top:12px">' + s.incomes.filter(function (i) { return !i.isCarry; }).map(txRow).join('') + '</div></div>';
 
     html += '<div class="card"><div class="section-head"><span class="section-title">Saídas</span><span class="section-sub money">Total: ' + F.formatBRL(s.comprometido) + '</span></div>' +
       '<div class="tx-list" style="margin-top:12px">' + (s.expenses.length ? s.expenses.map(txRow).join('') : emptyState('📭', 'Nenhuma despesa cadastrada para este mês.')) + '</div></div>';
