@@ -57,7 +57,7 @@
      ============================================================ */
   var VIEW_TITLES = {
     overview: 'Visão Geral', month: 'Mês', calendar: 'Calendário', debts: 'Dívidas',
-    extra: 'Renda Extra', projection: 'Projeção', reports: 'Relatórios', settings: 'Configurações'
+    extra: 'Renda Extra', investments: 'Investimentos', projection: 'Projeção', reports: 'Relatórios', settings: 'Configurações'
   };
 
   function setView(view) {
@@ -74,7 +74,7 @@
   function renderCurrentView() {
     ({
       overview: renderOverview, month: renderMonth, calendar: renderCalendar, debts: renderDebts,
-      extra: renderExtra, projection: renderProjection, reports: renderReports, settings: renderSettings
+      extra: renderExtra, investments: renderInvestments, projection: renderProjection, reports: renderReports, settings: renderSettings
     }[currentView])();
   }
 
@@ -138,6 +138,7 @@
     var extraSoFar = F.extraIncomeTotalForMonth(state, mk);
     var upcoming = s.expenses.filter(function (e) { return e.status !== 'paid'; }).slice(0, 5);
     var insights = F.buildInsights(state, mk);
+    var inv = F.computeInvestmentsSummary(state, mk);
 
     var html = '';
     html += '<div class="hero-card">' +
@@ -181,6 +182,14 @@
       '<div style="margin-top:12px"><div class="commit-bar-labels"><span>' + F.formatBRL(extraSoFar) + ' / ' + F.formatBRL(goalMonthly) + '</span><span>' + Math.round(goalMonthly ? (extraSoFar / goalMonthly) * 100 : 0) + '%</span></div>' +
       '<div class="progress"><div class="progress-fill" style="width:' + Math.min(100, goalMonthly ? (extraSoFar / goalMonthly) * 100 : 0) + '%;background:var(--teal)"></div></div></div>' +
       '</div>';
+
+    html += '<div class="card">' +
+      '<div class="section-head"><span class="section-title">Investimentos</span><button class="section-link" data-action="goto" data-view="investments">Ver</button></div>' +
+      (inv.pockets.length
+        ? '<div class="hero-amount money" style="font-size:26px;margin-top:8px">' + F.formatBRL(inv.totalBalance) + '</div>' +
+          '<div class="hint" style="margin-top:2px">' + inv.pockets.length + (inv.pockets.length === 1 ? ' caixinha' : ' caixinhas') + (inv.totalYieldThisMonth ? ' • + ' + F.formatBRL(inv.totalYieldThisMonth) + ' este mês' : '') + '</div>'
+        : '<div style="margin-top:8px">' + emptyState('💠', 'Nenhuma caixinha ainda.') + '</div>') +
+      '</div>';
     html += '</div></div>';
 
     html += '<div class="card"><span class="section-title">Insights</span><div class="insight-list" style="margin-top:12px">' + insights.map(insightItem).join('') + '</div></div>';
@@ -216,6 +225,11 @@
     if (s.caixaAnterior !== 0) {
       var prevMk = F.addMonths(monthCursor, -1);
       html += '<div class="settings-row"><div class="settings-row-text"><div class="settings-row-title">Saldo trazido de ' + F.monthKeyToLabel(prevMk) + '</div><div class="settings-row-sub">Não é receita deste mês — soma direto no saldo do mês</div></div><span class="money ' + (s.caixaAnterior >= 0 ? 'pos' : 'neg') + '" style="font-weight:800;font-size:15px">' + F.formatBRL(s.caixaAnterior) + '</span></div>';
+    }
+
+    if (s.investedNet) {
+      var isDeposit = s.investedNet > 0;
+      html += '<div class="settings-row"><div class="settings-row-text"><div class="settings-row-title">' + (isDeposit ? 'Alocado em caixinhas' : 'Resgatado de caixinhas') + ' este mês</div><div class="settings-row-sub">Não é despesa — ' + (isDeposit ? 'sai' : 'volta') + ' do saldo do mês</div></div><span class="money ' + (isDeposit ? 'neg' : 'pos') + '" style="font-weight:800;font-size:15px">' + F.formatBRL(Math.abs(s.investedNet)) + '</span></div>';
     }
 
     html += '<div class="card"><div class="section-head"><span class="section-title">Entradas</span><span class="section-sub money">Total: ' + F.formatBRL(s.recebidos) + '</span></div>' +
@@ -379,6 +393,60 @@
   }
 
   /* ============================================================
+     INVESTIMENTOS — caixinhas com rendimento pela Selic
+     ============================================================ */
+  var POCKET_PALETTE = ['info', 'accent-2', 'teal', 'warning', 'positive', 'danger'];
+  function renderInvestments() {
+    var mk = defaultMonthKey();
+    var inv = F.computeInvestmentsSummary(state, mk);
+    var rate = F.selicMonthlyRate(state) * 100;
+
+    var html = '<div class="hero-card">' +
+      '<div class="hero-greeting">Total investido' + (inv.pockets.length ? ' • ' + inv.pockets.length + (inv.pockets.length === 1 ? ' caixinha' : ' caixinhas') : '') + '</div>' +
+      '<div class="hero-amount money">' + F.formatBRL(inv.totalBalance) + '</div>' +
+      '<div class="hero-caption">' + (inv.totalYieldThisMonth ? '+ ' + F.formatBRL(inv.totalYieldThisMonth) + ' de rendimento em ' + F.monthKeyToLabel(mk).toLowerCase() : 'Selic atual: ' + rate.toFixed(2).replace('.', ',') + '% a.m.') + '</div>' +
+      (inv.pockets.length ? '<div class="chart-wrap" style="height:180px;margin-top:18px"><canvas id="chartPockets"></canvas></div>' : '') +
+      '</div>';
+
+    html += '<div class="card"><div class="section-head"><span class="section-title">Suas caixinhas</span><button class="btn btn-primary btn-sm" data-action="new-pocket">+ Nova caixinha</button></div>';
+    if (!inv.pockets.length) {
+      html += '<div style="margin-top:12px">' + emptyState('💠', 'Crie uma caixinha pra guardar dinheiro e render pela Selic.') + '</div>';
+    } else {
+      html += '<div class="tx-list" style="margin-top:12px">' + inv.pockets.map(function (p, i) {
+        var color = 'var(--' + POCKET_PALETTE[i % POCKET_PALETTE.length] + ')';
+        var pct = inv.totalBalance > 0 ? Math.round((p.balance / inv.totalBalance) * 100) : 0;
+        return '<div class="tx-row"><span class="priority-dot" style="width:12px;height:12px;background:' + color + '"></span>' +
+          '<div class="tx-info"><div class="tx-name">' + escapeHtml(p.name) + '</div><div class="tx-meta"><span>' + pct + '% do total</span>' +
+          (p.yieldThisMonth ? '<span>•</span><span class="pos">+' + F.formatBRL(p.yieldThisMonth) + ' este mês</span>' : '') + '</div></div>' +
+          '<div class="tx-right"><div class="tx-amount">' + F.formatBRL(p.balance) + '</div></div>' +
+          '<div class="tx-actions">' +
+          '<button class="icon-btn btn-sm" data-action="pocket-deposit" data-id="' + p.id + '" title="Depositar">↑</button>' +
+          '<button class="icon-btn btn-sm" data-action="pocket-withdraw" data-id="' + p.id + '" title="Sacar">↓</button>' +
+          '<button class="icon-btn btn-sm" data-action="edit-pocket" data-id="' + p.id + '" title="Renomear">✎</button>' +
+          '<button class="icon-btn btn-sm" data-action="delete-pocket" data-id="' + p.id + '" title="Excluir">🗑</button>' +
+          '</div></div>';
+      }).join('') + '</div>';
+    }
+    html += '</div>';
+
+    html += '<div class="hint" style="padding:0 4px">Rendimento calculado com a taxa Selic definida em Configurações — mudar a taxa recalcula o rendimento de todos os meses, inclusive os passados.</div>';
+
+    qs('#view-investments').innerHTML = html;
+    if (inv.pockets.length) drawPocketsChart(inv.pockets);
+  }
+
+  function drawPocketsChart(pockets) {
+    var ctx = qs('#chartPockets'); if (!ctx) return;
+    if (charts.pockets) charts.pockets.destroy();
+    var colors = pockets.map(function (_, i) { return cssVar(POCKET_PALETTE[i % POCKET_PALETTE.length]); });
+    charts.pockets = new Chart(ctx.getContext('2d'), {
+      type: 'doughnut',
+      data: { labels: pockets.map(function (p) { return p.name; }), datasets: [{ data: pockets.map(function (p) { return F.round2(p.balance); }), backgroundColor: colors, borderWidth: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: cssVar('text-2'), font: { size: 10 }, boxWidth: 8 } } } }
+    });
+  }
+
+  /* ============================================================
      PROJEÇÃO
      ============================================================ */
   var simState = null;
@@ -536,6 +604,12 @@
       '<button class="btn btn-primary" data-action="save-settings">Salvar renda</button>' +
       '</div></div>';
 
+    html += '<div class="card"><span class="section-title">Investimentos</span><div class="settings-group" style="margin-top:12px">' +
+      '<div class="form-row"><label>Taxa Selic (% ao ano)</label><input type="number" id="setSelicRate" value="' + state.settings.selicRateAnnual + '" min="0" step="0.01"></div>' +
+      '<div class="hint">Usada para calcular o rendimento mensal das suas caixinhas de investimento. Mudar a taxa recalcula o rendimento de todos os meses, inclusive os passados.</div>' +
+      '<button class="btn btn-primary" data-action="save-investment-settings" style="margin-top:10px">Salvar taxa</button>' +
+      '</div></div>';
+
     html += '<div class="card"><span class="section-title">Aparência</span><div class="settings-row" style="margin-top:12px">' +
       '<div class="settings-row-text"><div class="settings-row-title">Tema</div><div class="settings-row-sub">Alterna entre modo claro e escuro</div></div>' +
       '<button class="btn btn-secondary btn-sm" data-action="toggle-theme">' + (state.theme === 'dark' ? 'Usar claro' : 'Usar escuro') + '</button></div></div>';
@@ -560,7 +634,8 @@
       sheetOption('income', '<svg viewBox="0 0 384 512" aria-hidden="true" class="ico-pos"><path d="M214.6 41.4c-12.5-12.5-32.8-12.5-45.3 0l-160 160c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L160 141.3V448c0 17.7 14.3 32 32 32s32-14.3 32-32V141.3L329.4 246.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-160-160z"/></svg>', 'Receita', 'Salário, freelance, bônus...') +
       sheetOption('expense', '<svg viewBox="0 0 384 512" aria-hidden="true" class="ico-neg"><path d="M169.4 470.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 370.7V64c0-17.7-14.3-32-32-32s-32 14.3-32 32V370.7L54.6 265.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z"/></svg>', 'Despesa', 'Conta única, sem parcelas') +
       sheetOption('installment', '📆', 'Parcela', 'Compra parcelada') +
-      sheetOption('negotiable', '💳', 'Dívida', 'Cartão ou dívida a negociar');
+      sheetOption('negotiable', '💳', 'Dívida', 'Cartão ou dívida a negociar') +
+      sheetOption('invest', '💠', 'Investir', 'Guardar dinheiro numa caixinha');
     qs('#sheetOverlay').hidden = false;
   }
   function sheetOption(action, ico, title, sub) {
@@ -646,6 +721,32 @@
     );
   }
 
+  function formPocket(existing) {
+    var e = existing || {};
+    openModal(
+      '<div class="modal-head"><span class="modal-title">' + (existing ? 'Renomear caixinha' : 'Nova caixinha') + '</span><button class="icon-btn" data-action="close-modal">✕</button></div>' +
+      '<form id="formPocket" data-id="' + (e.id || '') + '">' +
+      '<div class="form-row"><label>Nome</label><input required name="name" value="' + escapeHtml(e.name || '') + '" placeholder="Ex: Reserva de emergência, Viagem..."></div>' +
+      '<div class="form-actions"><button type="submit" class="btn btn-primary btn-block">Salvar</button></div>' +
+      '</form>'
+    );
+  }
+
+  function formPocketMovement(pocket, type) {
+    var isDeposit = type === 'deposit';
+    var mk = defaultMonthKey();
+    var calc = F.computePocketBalance(state, pocket, mk);
+    openModal(
+      '<div class="modal-head"><span class="modal-title">' + (isDeposit ? 'Depositar em ' : 'Sacar de ') + escapeHtml(pocket.name) + '</span><button class="icon-btn" data-action="close-modal">✕</button></div>' +
+      (!isDeposit ? '<p class="hint" style="margin-bottom:10px">Saldo disponível: ' + F.formatBRL(calc.balance) + '</p>' : '') +
+      '<form id="formPocketMovement" data-pocket-id="' + pocket.id + '" data-type="' + type + '">' +
+      '<div class="form-row-2"><div><label>Valor (R$)</label><input required type="number" step="0.01" min="0.01" ' + (!isDeposit ? 'max="' + calc.balance + '"' : '') + ' name="amount"></div>' +
+      '<div><label>Mês</label><input required type="month" name="monthKey" value="' + mk + '"></div></div>' +
+      '<div class="form-actions"><button type="submit" class="btn btn-primary btn-block">' + (isDeposit ? 'Depositar' : 'Sacar') + '</button></div>' +
+      '</form>'
+    );
+  }
+
   function formImportPreview(candidates) {
     var totalI = candidates.incomes.length, totalE = candidates.expenses.length;
     var sample = candidates.incomes.slice(0, 4).map(function (i) { return { n: i.name, v: i.amount, t: 'Receita' }; })
@@ -688,6 +789,11 @@
     if (!confirm('Excluir esta dívida?')) return;
     state.negotiableDebts = state.negotiableDebts.filter(function (d) { return d.id !== id; });
     persist(); renderCurrentView(); showToast('Excluído');
+  }
+  function deletePocket(id) {
+    if (!confirm('Excluir esta caixinha? Todo o histórico de depósitos e saques dela será perdido. Essa ação não pode ser desfeita.')) return;
+    state.investmentPockets = state.investmentPockets.filter(function (p) { return p.id !== id; });
+    persist(); renderCurrentView(); showToast('Caixinha excluída');
   }
 
   function commitImport(candidates) {
@@ -745,6 +851,7 @@
     if (a === 'delete-debt') { deleteDebt(t.dataset.id); return; }
     if (a === 'delete-extra') { deleteExtra(t.dataset.id); return; }
     if (a === 'delete-negotiable') { deleteNegotiable(t.dataset.id); return; }
+    if (a === 'delete-pocket') { deletePocket(t.dataset.id); return; }
 
     if (a === 'edit-debt') {
       var d = state.debtGroups.find(function (x) { return x.id === t.dataset.id; });
@@ -756,13 +863,25 @@
       if (nd) formNegotiable(nd);
       return;
     }
+    if (a === 'edit-pocket') {
+      var pk = state.investmentPockets.find(function (x) { return x.id === t.dataset.id; });
+      if (pk) formPocket(pk);
+      return;
+    }
+    if (a === 'pocket-deposit' || a === 'pocket-withdraw') {
+      var pk2 = state.investmentPockets.find(function (x) { return x.id === t.dataset.id; });
+      if (pk2) formPocketMovement(pk2, a === 'pocket-deposit' ? 'deposit' : 'withdraw');
+      return;
+    }
 
     if (a === 'sheet-income') { closeSheet(); formIncome(); return; }
     if (a === 'sheet-expense') { closeSheet(); formExpense(false); return; }
     if (a === 'sheet-installment') { closeSheet(); formExpense(true); return; }
     if (a === 'sheet-negotiable') { closeSheet(); formNegotiable(); return; }
+    if (a === 'sheet-invest') { closeSheet(); setView('investments'); return; }
     if (a === 'new-negotiable') { formNegotiable(t.dataset.name ? { name: t.dataset.name } : null); return; }
     if (a === 'new-extra') { formExtra(); return; }
+    if (a === 'new-pocket') { formPocket(); return; }
 
     if (a === 'select-priority') {
       qsa('.priority-chip', t.parentElement).forEach(function (c) { c.classList.remove('selected'); });
@@ -795,6 +914,11 @@
       state.settings.salaryDefault = parseFloat(qs('#setSalaryDefault').value) || 0;
       state.settings.extraIncomeWeeklyGoal = parseFloat(qs('#setExtraGoal').value) || 0;
       persist(); renderCurrentView(); showToast('Renda atualizada');
+      return;
+    }
+    if (a === 'save-investment-settings') {
+      state.settings.selicRateAnnual = parseFloat(qs('#setSelicRate').value) || 0;
+      persist(); renderCurrentView(); showToast('Taxa Selic atualizada');
       return;
     }
     if (a === 'export-excel') {
@@ -869,6 +993,38 @@
       if (!(payload4.amount > 0)) { showToast('Informe um valor válido.'); return; }
       state.extraIncomeEntries.push(payload4);
       persist(); closeModal(); renderCurrentView(); showToast('Renda extra registrada');
+      return;
+    }
+
+    if (form.id === 'formPocket') {
+      var pid = form.dataset.id;
+      var pname = fd.get('name').trim();
+      if (!pname) { showToast('Dê um nome pra caixinha.'); return; }
+      if (pid) {
+        var pIdx = state.investmentPockets.findIndex(function (x) { return x.id === pid; });
+        if (pIdx !== -1) state.investmentPockets[pIdx].name = pname;
+      } else {
+        state.investmentPockets.push({ id: S.uid('pk'), name: pname, movements: [] });
+      }
+      persist(); closeModal(); renderCurrentView(); showToast('Caixinha salva');
+      return;
+    }
+
+    if (form.id === 'formPocketMovement') {
+      var mPocketId = form.dataset.pocketId;
+      var mType = form.dataset.type;
+      var mAmount = parseFloat(fd.get('amount'));
+      var mMonthKey = fd.get('monthKey');
+      if (!(mAmount > 0)) { showToast('Informe um valor válido.'); return; }
+      var pocket = state.investmentPockets.find(function (x) { return x.id === mPocketId; });
+      if (!pocket) return;
+      if (mType === 'withdraw') {
+        var calc = F.computePocketBalance(state, pocket, defaultMonthKey());
+        if (mAmount > calc.balance + 0.005) { showToast('Valor maior que o saldo disponível na caixinha.'); return; }
+      }
+      pocket.movements = pocket.movements || [];
+      pocket.movements.push({ id: S.uid('pkm'), type: mType, amount: mAmount, monthKey: mMonthKey });
+      persist(); closeModal(); renderCurrentView(); showToast(mType === 'deposit' ? 'Depósito registrado' : 'Saque registrado');
       return;
     }
   });

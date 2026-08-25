@@ -211,9 +211,63 @@
     return list;
   }
 
+  /* -------------------------------------------------------
+     Caixinhas de investimento — juros compostos mensais sobre a Selic
+     ------------------------------------------------------- */
+  function selicMonthlyRate(state) {
+    var annual = (state.settings.selicRateAnnual || 0) / 100;
+    return Math.pow(1 + annual, 1 / 12) - 1;
+  }
+
+  function pocketMovementsForMonth(pocket, monthKey) {
+    return (pocket.movements || []).filter(function (m) { return m.monthKey === monthKey; });
+  }
+
+  function netPocketMovementsForMonth(state, monthKey) {
+    var net = 0;
+    (state.investmentPockets || []).forEach(function (p) {
+      pocketMovementsForMonth(p, monthKey).forEach(function (m) {
+        net += (m.type === 'deposit' ? m.amount : -m.amount);
+      });
+    });
+    return net;
+  }
+
+  function computePocketBalance(state, pocket, asOfMonthKey) {
+    var movements = (pocket.movements || []).slice().sort(function (a, b) { return a.monthKey < b.monthKey ? -1 : (a.monthKey > b.monthKey ? 1 : 0); });
+    if (!movements.length) return { balance: 0, principal: 0, yieldThisMonth: 0, yieldTotal: 0 };
+    var rate = selicMonthlyRate(state);
+    var mk = movements[0].monthKey;
+    var balance = 0, principal = 0, yieldTotal = 0, yieldThisMonth = 0;
+    while (compareMonthKey(mk, asOfMonthKey) <= 0) {
+      var y = balance * rate;
+      balance += y;
+      yieldTotal += y;
+      if (mk === asOfMonthKey) yieldThisMonth = y;
+      pocketMovementsForMonth(pocket, mk).forEach(function (m) {
+        var delta = m.type === 'deposit' ? m.amount : -m.amount;
+        balance += delta; principal += delta;
+      });
+      mk = addMonths(mk, 1);
+    }
+    return { balance: round2(balance), principal: round2(principal), yieldThisMonth: round2(yieldThisMonth), yieldTotal: round2(yieldTotal) };
+  }
+
+  function computeInvestmentsSummary(state, asOfMonthKey) {
+    var pockets = (state.investmentPockets || []).map(function (p) {
+      var calc = computePocketBalance(state, p, asOfMonthKey);
+      return { id: p.id, name: p.name, balance: calc.balance, principal: calc.principal, yieldThisMonth: calc.yieldThisMonth, yieldTotal: calc.yieldTotal };
+    });
+    var totalBalance = pockets.reduce(function (s, p) { return s + p.balance; }, 0);
+    var totalPrincipal = pockets.reduce(function (s, p) { return s + p.principal; }, 0);
+    var totalYieldThisMonth = pockets.reduce(function (s, p) { return s + p.yieldThisMonth; }, 0);
+    var totalYieldAll = pockets.reduce(function (s, p) { return s + p.yieldTotal; }, 0);
+    return { pockets: pockets, totalBalance: round2(totalBalance), totalPrincipal: round2(totalPrincipal), totalYieldThisMonth: round2(totalYieldThisMonth), totalYieldAll: round2(totalYieldAll) };
+  }
+
   var _summaryCache = {};
   function computeMonthSummary(state, monthKey) {
-    var cacheKey = monthKey + '::' + JSON.stringify(state.transactionOverrides) + '::' + state.debtGroups.length + '::' + (state.extraIncomeEntries || []).length + '::' + (state.manualIncomes || []).length;
+    var cacheKey = monthKey + '::' + JSON.stringify(state.transactionOverrides) + '::' + state.debtGroups.length + '::' + (state.extraIncomeEntries || []).length + '::' + (state.manualIncomes || []).length + '::' + JSON.stringify(state.investmentPockets || []);
     if (_summaryCache[cacheKey]) return _summaryCache[cacheKey];
 
     var expenses = generateExpensesForMonth(state, monthKey);
@@ -223,14 +277,15 @@
     var recebidos = incomesNoCarry.reduce(function (s, i) { return s + i.amount; }, 0);
     var caixaAnterior = incomesFull.filter(function (i) { return i.isCarry; }).reduce(function (s, i) { return s + i.amount; }, 0);
     var totalIncome = recebidos + caixaAnterior;
+    var investedNet = netPocketMovementsForMonth(state, monthKey);
 
     var comprometido = expenses.reduce(function (s, e) { return s + e.amount; }, 0);
     var expensesPaid = expenses.filter(function (e) { return e.status === 'paid'; }).reduce(function (s, e) { return s + e.amount; }, 0);
     var expensesUnpaidPriority = expenses.filter(function (e) { return e.status !== 'paid' && (e.priority === 'urgent' || e.priority === 'important'); }).reduce(function (s, e) { return s + e.amount; }, 0);
     var expensesUnpaidUrgent = expenses.filter(function (e) { return e.status !== 'paid' && e.priority === 'urgent'; }).reduce(function (s, e) { return s + e.amount; }, 0);
 
-    var saldoMes = totalIncome - comprometido; // saldo simples do mês (para projeção e carry-over)
-    var saldoEmConta = caixaAnterior + recebidos - expensesPaid;
+    var saldoMes = totalIncome - comprometido - investedNet; // saldo simples do mês (para projeção e carry-over)
+    var saldoEmConta = caixaAnterior + recebidos - expensesPaid - investedNet;
     var saldoDisponivel = saldoEmConta - expensesUnpaidPriority;
     var committedPercent = recebidos > 0 ? Math.max(0, Math.min(999, (comprometido / recebidos) * 100)) : 0;
 
@@ -241,6 +296,7 @@
       recebidos: recebidos,
       caixaAnterior: caixaAnterior,
       totalIncome: totalIncome,
+      investedNet: investedNet,
       comprometido: comprometido,
       expensesPaid: expensesPaid,
       expensesUnpaidPriority: expensesUnpaidPriority,
@@ -409,6 +465,7 @@
       });
       monthRows.push(['Total saídas', '', round2(s.comprometido), '', '', '']);
       monthRows.push(['', '', '', '', '', '']);
+      if (s.investedNet) monthRows.push(['Alocado em caixinhas', '', round2(s.investedNet), '', '', '']);
       monthRows.push(['Saldo do mês', '', round2(s.saldoMes), '', '', '']);
 
       var ws = XLSX.utils.aoa_to_sheet(monthRows);
@@ -501,6 +558,7 @@
     computeMonthSummary: computeMonthSummary, invalidateCache: invalidateCache,
     remainingDebtTotal: remainingDebtTotal, buildProjection: buildProjection, buildBreathingTimeline: buildBreathingTimeline,
     buildInsights: buildInsights, simulateScenario: simulateScenario,
+    selicMonthlyRate: selicMonthlyRate, computePocketBalance: computePocketBalance, computeInvestmentsSummary: computeInvestmentsSummary,
     exportToExcel: exportToExcel, parseWorkbookForImport: parseWorkbookForImport, round2: round2
   };
 

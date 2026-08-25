@@ -37,10 +37,12 @@
   function migrate(state) {
     if (!state.schemaVersion) state.schemaVersion = SCHEMA_VERSION;
     if (!state.settings) state.settings = emptyState().settings;
+    if (state.settings.selicRateAnnual === undefined) state.settings.selicRateAnnual = 0;
     if (!state.debtGroups) state.debtGroups = [];
     if (!state.manualIncomes) state.manualIncomes = [];
     if (!state.extraIncomeEntries) state.extraIncomeEntries = [];
     if (!state.negotiableDebts) state.negotiableDebts = [];
+    if (!state.investmentPockets) state.investmentPockets = [];
     if (!state.transactionOverrides) state.transactionOverrides = {};
     if (!state.theme) state.theme = 'dark';
     return state;
@@ -81,11 +83,12 @@
     return {
       schemaVersion: SCHEMA_VERSION,
       theme: 'dark',
-      settings: { salaryDefault: 0, salaryOverrides: {}, salaryDay: 5, extraIncomeWeeklyGoal: 0, epochMonth: todayMk, cashStartEpoch: 0 },
+      settings: { salaryDefault: 0, salaryOverrides: {}, salaryDay: 5, extraIncomeWeeklyGoal: 0, epochMonth: todayMk, cashStartEpoch: 0, selicRateAnnual: 0 },
       debtGroups: [],
       manualIncomes: [],
       extraIncomeEntries: [],
       negotiableDebts: [],
+      investmentPockets: [],
       transactionOverrides: {},
       meta: { createdAt: new Date().toISOString() }
     };
