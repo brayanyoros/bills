@@ -57,7 +57,8 @@
      ============================================================ */
   var VIEW_TITLES = {
     overview: 'Visão Geral', month: 'Mês', calendar: 'Calendário', debts: 'Dívidas',
-    extra: 'Renda Extra', investments: 'Investimentos', projection: 'Projeção', reports: 'Relatórios', settings: 'Configurações'
+    extra: 'Renda Extra', investments: 'Investimentos', projection: 'Projeção', reports: 'Relatórios',
+    profile: 'Perfil', settings: 'Configurações'
   };
 
   function setView(view) {
@@ -69,12 +70,26 @@
     closeSidebar();
     renderCurrentView();
     qs('#mainContent').scrollTop = 0;
+    updateBottomNavPill();
   }
+
+  function updateBottomNavPill() {
+    var pill = qs('#bnPill');
+    var nav = qs('#bottomNav');
+    var active = qs('.bn-item.active', nav);
+    if (!pill || !nav || !active || getComputedStyle(nav).display === 'none') { if (pill) pill.classList.remove('ready'); return; }
+    var navRect = nav.getBoundingClientRect(), itemRect = active.getBoundingClientRect();
+    pill.style.width = itemRect.width + 'px';
+    pill.style.transform = 'translateX(' + (itemRect.left - navRect.left) + 'px)';
+    pill.classList.add('ready');
+  }
+  window.addEventListener('resize', updateBottomNavPill);
 
   function renderCurrentView() {
     ({
       overview: renderOverview, month: renderMonth, calendar: renderCalendar, debts: renderDebts,
-      extra: renderExtra, investments: renderInvestments, projection: renderProjection, reports: renderReports, settings: renderSettings
+      extra: renderExtra, investments: renderInvestments, projection: renderProjection, reports: renderReports,
+      profile: renderProfile, settings: renderSettings
     }[currentView])();
   }
 
@@ -469,7 +484,7 @@
 
   function renderSimulator() {
     var salaryOptions = [2500, 4000, 5000, 6000, 7000];
-    var sal = simState ? simState.salary : state.settings.salaryDefault;
+    var sal = simState ? simState.salary : F.salaryForMonth(state, defaultMonthKey());
     var extra = simState ? simState.extra : (state.settings.extraIncomeWeeklyGoal || 0) * 4;
     var result = F.simulateScenario(state, defaultMonthKey(), sal, extra);
 
@@ -589,20 +604,40 @@
   }
 
   /* ============================================================
+     PERFIL — salário mês a mês e renda extra
+     ============================================================ */
+  function renderProfile() {
+    var epoch = state.settings.epochMonth;
+    var months = [];
+    for (var i = 0; i < 6; i++) months.push(F.addMonths(epoch, i));
+
+    var html = '<div class="card"><span class="section-title">Salário dos próximos 6 meses</span>' +
+      '<div class="hint" style="margin-top:4px">Preencha o salário esperado de cada mês. Depois do 6º mês, o app repete automaticamente o último valor preenchido aqui.</div>' +
+      '<div class="settings-group" style="margin-top:14px">' +
+      months.map(function (mk) {
+        var val = state.settings.salaryOverrides[mk];
+        return '<div class="form-row"><label>' + F.monthKeyToLabel(mk) + '</label><input type="number" class="profile-salary-input" data-month="' + mk + '" value="' + (val !== undefined && val !== null ? val : '') + '" min="0" step="50" placeholder="0"></div>';
+      }).join('') +
+      '</div></div>';
+
+    html += '<div class="card"><span class="section-title">Renda extra</span><div class="settings-group" style="margin-top:12px">' +
+      '<div class="form-row"><label>Meta de renda extra por semana</label><input type="number" id="setExtraGoal" value="' + state.settings.extraIncomeWeeklyGoal + '" min="0" step="50"></div>' +
+      '</div></div>';
+
+    html += '<button class="btn btn-primary btn-block" data-action="save-profile-settings">Salvar perfil</button>';
+
+    qs('#view-profile').innerHTML = html;
+  }
+
+  /* ============================================================
      CONFIGURAÇÕES
      ============================================================ */
   function renderSettings() {
-    var epoch = state.settings.epochMonth;
     var html = '<div class="card"><div class="settings-row" style="background:' + (persistenceOk ? 'var(--positive-soft)' : 'var(--danger-soft)') + '">' +
       '<div class="settings-row-text"><div class="settings-row-title" style="color:' + (persistenceOk ? 'var(--positive)' : 'var(--danger)') + '">' + (persistenceOk ? '✓ Armazenamento local funcionando' : '⚠ Armazenamento local indisponível') + '</div>' +
       '<div class="settings-row-sub">' + (persistenceOk ? 'Seus dados estão sendo salvos neste navegador normalmente.' : 'Suas alterações não estão sendo salvas. Abra o arquivo em um navegador completo (Chrome/Firefox), fora de um visualizador de arquivos.') + '</div></div></div></div>';
 
-    html += '<div class="card"><span class="section-title">Renda</span><div class="settings-group" style="margin-top:12px">' +
-      '<div class="form-row"><label>Salário de ' + F.monthKeyToLabel(epoch).toLowerCase() + '</label><input type="number" id="setSalaryEpoch" value="' + (state.settings.salaryOverrides[epoch] || state.settings.salaryDefault) + '" min="0" step="50"></div>' +
-      '<div class="form-row"><label>Salário padrão (a partir de ' + F.monthKeyToLabel(F.addMonths(epoch, 1)).toLowerCase() + ')</label><input type="number" id="setSalaryDefault" value="' + state.settings.salaryDefault + '" min="0" step="50"></div>' +
-      '<div class="form-row"><label>Meta de renda extra por semana</label><input type="number" id="setExtraGoal" value="' + state.settings.extraIncomeWeeklyGoal + '" min="0" step="50"></div>' +
-      '<button class="btn btn-primary" data-action="save-settings">Salvar renda</button>' +
-      '</div></div>';
+    html += '<div class="card"><div class="settings-row"><div class="settings-row-text"><div class="settings-row-title">Renda e salário</div><div class="settings-row-sub">Agora fica no seu Perfil, com o salário mês a mês</div></div><button class="btn btn-secondary btn-sm" data-action="goto" data-view="profile">Ir pro Perfil</button></div></div>';
 
     html += '<div class="card"><span class="section-title">Investimentos</span><div class="settings-group" style="margin-top:12px">' +
       '<div class="form-row"><label>Taxa Selic (% ao ano)</label><input type="number" id="setSelicRate" value="' + state.settings.selicRateAnnual + '" min="0" step="0.01"></div>' +
@@ -902,18 +937,21 @@
       return;
     }
     if (a === 'sim-apply') {
-      if (!confirm('Aplicar este salário simulado como seu novo padrão a partir de agora?')) return;
-      state.settings.salaryDefault = simState ? simState.salary : parseFloat(t.dataset.salary);
+      if (!confirm('Aplicar este salário simulado a partir do mês atual (edite os detalhes depois no Perfil)?')) return;
+      state.settings.salaryOverrides[defaultMonthKey()] = simState ? simState.salary : parseFloat(t.dataset.salary);
       persist(); renderCurrentView(); showToast('Cenário aplicado');
       return;
     }
 
-    if (a === 'save-settings') {
-      var epoch = state.settings.epochMonth;
-      state.settings.salaryOverrides[epoch] = parseFloat(qs('#setSalaryEpoch').value) || 0;
-      state.settings.salaryDefault = parseFloat(qs('#setSalaryDefault').value) || 0;
+    if (a === 'save-profile-settings') {
+      qsa('.profile-salary-input').forEach(function (inp) {
+        var mk = inp.dataset.month;
+        if (inp.value === '') { delete state.settings.salaryOverrides[mk]; return; }
+        var val = parseFloat(inp.value);
+        if (!isNaN(val)) state.settings.salaryOverrides[mk] = val;
+      });
       state.settings.extraIncomeWeeklyGoal = parseFloat(qs('#setExtraGoal').value) || 0;
-      persist(); renderCurrentView(); showToast('Renda atualizada');
+      persist(); renderCurrentView(); showToast('Perfil atualizado');
       return;
     }
     if (a === 'save-investment-settings') {

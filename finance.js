@@ -165,12 +165,21 @@
   }
 
   function salaryForMonth(state, monthKey) {
-    var ov = state.settings.salaryOverrides && state.settings.salaryOverrides[monthKey];
+    var overrides = state.settings.salaryOverrides || {};
+    var ov = overrides[monthKey];
     if (ov !== undefined && ov !== null) return ov;
-    // O "salário padrão" só vale a partir do mês inicial controlado — meses
-    // anteriores (sem valor próprio definido) não herdam o valor "futuro".
+    // Meses anteriores ao mês inicial controlado não herdam valor nenhum.
     if (compareMonthKey(monthKey, state.settings.epochMonth) < 0) return 0;
-    return state.settings.salaryDefault;
+    // Sem valor próprio: repete o último salário definido em um mês anterior
+    // (o Perfil deixa o usuário preencher os próximos meses; depois disso,
+    // o valor do último mês preenchido continua valendo indefinidamente).
+    var bestKey = null;
+    Object.keys(overrides).forEach(function (k) {
+      if (compareMonthKey(k, monthKey) <= 0 && (bestKey === null || compareMonthKey(k, bestKey) > 0)) bestKey = k;
+    });
+    if (bestKey !== null) return overrides[bestKey];
+    // Compatibilidade com saves antigos que só tinham um "salário padrão" único.
+    return state.settings.salaryDefault || 0;
   }
 
   function extraIncomeForMonth(state, monthKey) {
