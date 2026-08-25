@@ -70,20 +70,7 @@
     closeSidebar();
     renderCurrentView();
     qs('#mainContent').scrollTop = 0;
-    updateBottomNavPill();
   }
-
-  function updateBottomNavPill() {
-    var pill = qs('#bnPill');
-    var nav = qs('#bottomNav');
-    var active = qs('.bn-item.active', nav);
-    if (!pill || !nav || !active || getComputedStyle(nav).display === 'none') { if (pill) pill.classList.remove('ready'); return; }
-    var navRect = nav.getBoundingClientRect(), itemRect = active.getBoundingClientRect();
-    pill.style.width = itemRect.width + 'px';
-    pill.style.transform = 'translateX(' + (itemRect.left - navRect.left) + 'px)';
-    pill.classList.add('ready');
-  }
-  window.addEventListener('resize', updateBottomNavPill);
 
   function renderCurrentView() {
     ({
@@ -1118,16 +1105,5 @@
   applyTheme();
   qs('#persistenceBanner').hidden = persistenceOk;
   setView('overview');
-
-  // A largura da pílula do menu é medida via getBoundingClientRect() logo após
-  // trocar de view. Se a fonte (carregada por CDN) ainda não tiver terminado de
-  // carregar nesse instante, os botões reflow depois e a medição fica errada —
-  // a pílula usa border-radius:999px, então uma largura errada demais vira
-  // visualmente um círculo em vez do formato de pílula. Recalcula assim que as
-  // fontes terminarem de carregar (e de novo logo depois, por segurança).
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(function () { updateBottomNavPill(); });
-  }
-  setTimeout(updateBottomNavPill, 400);
 
 })();

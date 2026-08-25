@@ -528,15 +528,12 @@ table.rep-table tr:hover td{ background:var(--surface-2); }
     background:var(--nav-bg);
     border:1px solid var(--border-soft); box-shadow:var(--glow-accent-soft), var(--shadow-3); z-index:50;
   }
-  .bn-pill{
-    position:absolute; top:6px; height:calc(100% - 12px); border-radius:999px;
-    background:var(--info-soft); box-shadow:inset 0 0 0 1px var(--border);
-    transition:transform .32s cubic-bezier(.34,1.4,.4,1), width .28s cubic-bezier(.3,0,.2,1);
-    z-index:0; pointer-events:none; opacity:0;
+  .bn-item{
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    font-size:9.5px; font-weight:700; color:var(--text-3); padding:6px 14px; border-radius:999px;
+    transition:background-color .2s ease, color .2s ease;
   }
-  .bn-pill.ready{ opacity:1; }
-  .bn-item{ position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:2px; font-size:9.5px; font-weight:700; color:var(--text-3); padding:6px 12px; transition:color .2s ease; }
-  .bn-item.active{ color:var(--info); }
+  .bn-item.active{ background:var(--info-soft); color:var(--info); }
   .bn-ico{ font-size:17px; display:inline-flex; align-items:center; justify-content:center; }
   .bn-ico svg{ width:19px; height:19px; fill:currentColor; }
   .bn-fab{ position:relative; z-index:1; width:46px; height:46px; border-radius:50%; background:var(--brand-cta-bg); color:var(--brand-cta-text); font-size:22px; font-weight:800; display:flex; align-items:center; justify-content:center; margin-top:-14px; box-shadow:var(--glow-accent), var(--shadow-2); }
