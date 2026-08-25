@@ -101,8 +101,9 @@
 /* ============================================================
    Reset & base
    ============================================================ */
-*,*::before,*::after{ box-sizing:border-box; }
+*,*::before,*::after{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 html,body{ height:100%; }
+html{ -webkit-tap-highlight-color:transparent; }
 body{
   margin:0;
   background:var(--bg);

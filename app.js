@@ -136,10 +136,12 @@
   }
 
   function greeting() {
+    var name = (state.settings.userName || '').trim().split(' ')[0];
+    var suffix = name ? ', ' + escapeHtml(name) : '';
     var h = new Date().getHours();
-    if (h < 12) return 'Bom dia';
-    if (h < 18) return 'Boa tarde';
-    return 'Boa noite';
+    if (h < 12) return 'Bom dia' + suffix;
+    if (h < 18) return 'Boa tarde' + suffix;
+    return 'Boa noite' + suffix;
   }
 
   /* ============================================================
@@ -611,7 +613,11 @@
     var months = [];
     for (var i = 0; i < 6; i++) months.push(F.addMonths(epoch, i));
 
-    var html = '<div class="card"><span class="section-title">Salário dos próximos 6 meses</span>' +
+    var html = '<div class="card"><span class="section-title">Seus dados</span><div class="settings-group" style="margin-top:12px">' +
+      '<div class="form-row"><label>Nome</label><input type="text" id="setUserName" value="' + escapeHtml(state.settings.userName || '') + '" placeholder="Como quer ser chamado?" maxlength="40"></div>' +
+      '</div></div>';
+
+    html += '<div class="card"><span class="section-title">Salário dos próximos 6 meses</span>' +
       '<div class="hint" style="margin-top:4px">Preencha o salário esperado de cada mês. Depois do 6º mês, o app repete automaticamente o último valor preenchido aqui.</div>' +
       '<div class="settings-group" style="margin-top:14px">' +
       months.map(function (mk) {
@@ -944,6 +950,7 @@
     }
 
     if (a === 'save-profile-settings') {
+      state.settings.userName = qs('#setUserName').value.trim().slice(0, 40);
       qsa('.profile-salary-input').forEach(function (inp) {
         var mk = inp.dataset.month;
         if (inp.value === '') { delete state.settings.salaryOverrides[mk]; return; }

@@ -38,6 +38,7 @@
     if (!state.schemaVersion) state.schemaVersion = SCHEMA_VERSION;
     if (!state.settings) state.settings = emptyState().settings;
     if (state.settings.selicRateAnnual === undefined) state.settings.selicRateAnnual = 0;
+    if (state.settings.userName === undefined) state.settings.userName = '';
     if (!state.debtGroups) state.debtGroups = [];
     if (!state.manualIncomes) state.manualIncomes = [];
     if (!state.extraIncomeEntries) state.extraIncomeEntries = [];
@@ -83,7 +84,7 @@
     return {
       schemaVersion: SCHEMA_VERSION,
       theme: 'dark',
-      settings: { salaryDefault: 0, salaryOverrides: {}, salaryDay: 5, extraIncomeWeeklyGoal: 0, epochMonth: todayMk, cashStartEpoch: 0, selicRateAnnual: 0 },
+      settings: { userName: '', salaryDefault: 0, salaryOverrides: {}, salaryDay: 5, extraIncomeWeeklyGoal: 0, epochMonth: todayMk, cashStartEpoch: 0, selicRateAnnual: 0 },
       debtGroups: [],
       manualIncomes: [],
       extraIncomeEntries: [],

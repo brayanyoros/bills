@@ -1,6 +1,6 @@
 /* Bills — service worker: cacheia o app shell pra abrir rápido e funcionar offline
    (gráficos/Excel dependem de CDN e não funcionam sem internet, como já avisado no app). */
-var CACHE_NAME = 'bills-shell-v2';
+var CACHE_NAME = 'bills-shell-v3';
 var APP_SHELL = [
   './',
   './index.html',
