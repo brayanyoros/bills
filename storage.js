@@ -13,60 +13,13 @@
     return (prefix || 'id') + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   }
 
-  /* -------------------------------------------------------
-     Dados iniciais (Setembro/2026), conforme informado.
-     ------------------------------------------------------- */
-  function seedState() {
-    return {
-      schemaVersion: SCHEMA_VERSION,
-      theme: (global.matchMedia && global.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark',
-
-      settings: {
-        salaryDefault: 5000,           // a partir de 10/2026
-        salaryOverrides: { '2026-09': 2500 },
-        salaryDay: 5,
-        extraIncomeWeeklyGoal: 200,    // por semana (~R$800/mês)
-        epochMonth: '2026-09',         // primeiro mês controlado no app
-        cashStartEpoch: 1000           // caixa inicial de Setembro/2026
-      },
-
-      // Despesas: parcelamentos, contas únicas e contas recorrentes sem fim (installments = null)
-      debtGroups: [
-        { id: 'mp', name: 'Ministério Público', category: 'Jurídico', installmentValue: 3200, installments: 1, startMonth: '2026-09', dueDay: 7, priority: 'urgent', notes: 'Pagamento único' },
-        { id: 'marquin', name: 'Marquin / Notebook', category: 'Compras', installmentValue: 266, installments: 15, startMonth: '2026-09', dueDay: 10, priority: 'urgent', notes: '' },
-        { id: 'silvio', name: 'Silvio TMB', category: 'Empréstimo', installmentValue: 350, installments: 5, startMonth: '2026-09', dueDay: 15, priority: 'urgent', notes: '' },
-        { id: 'moto', name: 'Moto', category: 'Veículo', installmentValue: 468.96, installments: 23, startMonth: '2026-09', dueDay: 16, priority: 'urgent', notes: '23 parcelas restantes' },
-        { id: 'tv', name: 'Televisão', category: 'Compras', installmentValue: 300, installments: 7, startMonth: '2026-09', dueDay: 27, priority: 'urgent', notes: '' },
-        { id: 'shop15', name: 'Shop 15', category: 'Compras', installmentValue: 182, installments: 6, startMonth: '2026-09', dueDay: 27, priority: 'urgent', notes: '' },
-        { id: 'internet', name: 'Internet', category: 'Casa', installmentValue: 110, installments: null, startMonth: '2026-09', dueDay: 10, priority: 'important', notes: 'Recorrente' },
-        { id: 'luz', name: 'Luz', category: 'Casa', installmentValue: 80, installments: null, startMonth: '2026-09', dueDay: 20, priority: 'important', notes: 'Recorrente' }
-      ],
-
-      manualIncomes: [],
-
-      extraIncomeEntries: [
-        { id: 'ei1', monthKey: '2026-09', amount: 200, date: '2026-09-07', label: 'Semana 1' },
-        { id: 'ei2', monthKey: '2026-09', amount: 200, date: '2026-09-14', label: 'Semana 2' },
-        { id: 'ei3', monthKey: '2026-09', amount: 200, date: '2026-09-21', label: 'Semana 3' },
-        { id: 'ei4', monthKey: '2026-09', amount: 200, date: '2026-09-28', label: 'Semana 4' }
-      ],
-
-      negotiableDebts: [],
-
-      // status/pagamento por lançamento gerado: chave = `${debtGroupId ou manualId}_${monthKey}`
-      transactionOverrides: {},
-
-      meta: { createdAt: new Date().toISOString() }
-    };
-  }
-
   function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
 
   function load() {
     var raw = null;
     try { raw = global.localStorage.getItem(STORAGE_KEY); } catch (e) { raw = null; }
     if (!raw) {
-      var fresh = seedState();
+      var fresh = emptyState();
       save(fresh);
       return fresh;
     }
@@ -75,7 +28,7 @@
       return migrate(parsed);
     } catch (e) {
       console.error('Norte: estado salvo corrompido, recriando dados iniciais.', e);
-      var fresh2 = seedState();
+      var fresh2 = emptyState();
       save(fresh2);
       return fresh2;
     }
@@ -83,7 +36,7 @@
 
   function migrate(state) {
     if (!state.schemaVersion) state.schemaVersion = SCHEMA_VERSION;
-    if (!state.settings) state.settings = seedState().settings;
+    if (!state.settings) state.settings = emptyState().settings;
     if (!state.debtGroups) state.debtGroups = [];
     if (!state.manualIncomes) state.manualIncomes = [];
     if (!state.extraIncomeEntries) state.extraIncomeEntries = [];
@@ -175,7 +128,7 @@
   global.Storage = {
     KEY: STORAGE_KEY,
     uid: uid,
-    seedState: seedState,
+    seedState: emptyState,
     emptyState: emptyState,
     load: load,
     save: save,

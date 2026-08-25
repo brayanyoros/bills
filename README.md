@@ -13,7 +13,7 @@ python3 -m http.server 8000
 # depois acesse http://localhost:8000
 ```
 
-Os únicos recursos que exigem internet são as bibliotecas carregadas por CDN (Chart.js, SheetJS/XLSX e as fontes Sora/Inter). Se estiver offline, os gráficos e a exportação/importação de Excel não funcionam, mas o resto do app continua normal.
+Os únicos recursos que exigem internet são as bibliotecas carregadas por CDN (Chart.js, SheetJS/XLSX e a fonte Inter). Se estiver offline, os gráficos e a exportação/importação de Excel não funcionam, mas o resto do app continua normal.
 
 ## Onde ficam seus dados
 
@@ -29,11 +29,9 @@ finance.js    → toda a lógica: parcelas, projeções, timeline de dívidas, i
 app.js        → telas, navegação, formulários e eventos
 ```
 
-## Dados iniciais já cadastrados
+## Primeiro uso
 
-O app já entra com os dados de Setembro/2026 que você passou: salário, renda extra, Ministério Público, Marquin/Notebook, Silvio TMB, Moto, Televisão, Shop 15, Internet e Luz — tudo com as prioridades e prazos informados. A partir de Outubro/2026, o salário assumido é R$ 5.000 (editável em **Configurações**).
-
-Você pode editar ou apagar qualquer um desses lançamentos a qualquer momento pelos ícones de lápis/lixeira, ou zerar tudo em **Configurações → Apagar todos os dados**.
+O app entra vazio — sem nenhum lançamento de exemplo. Cadastre suas receitas e despesas pelo botão **+ Novo**, ou importe uma planilha existente em **Configurações → Importar planilha Excel**. Tudo pode ser editado ou apagado depois pelos ícones de lápis/lixeira, ou zerado em **Configurações → Apagar todos os dados**.
 
 ## O que cada tela faz
 
