@@ -7,6 +7,7 @@ App financeiro pessoal, estático, sem build step. Ver [README.md](README.md) pa
 - HTML/CSS/JS puro, sem framework, sem bundler. Abra `index.html` direto no navegador ou sirva estático.
 - Dependências externas via CDN (precisam de internet): Chart.js, SheetJS/XLSX, fonte Manrope (Google Fonts).
 - Dados ficam só no `localStorage` do navegador (ver `storage.js`). Não há backend.
+- É um **PWA** instalável (`manifest.json` + `sw.js`, ícones em `icons/`). Só instala/funciona offline pelo link publicado ou `http://` — `file://` não registra service worker (restrição do navegador, não bug). Ao editar `index.html`/`styles.css`/`storage.js`/`finance.js`/`app.js`, lembrar que `sw.js` cacheia esses arquivos — bump no `CACHE_NAME` (ex: `bills-shell-v2`) se precisar forçar atualização em quem já instalou.
 
 ## Estrutura
 

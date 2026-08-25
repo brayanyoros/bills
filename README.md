@@ -15,6 +15,16 @@ python3 -m http.server 8000
 
 Os únicos recursos que exigem internet são as bibliotecas carregadas por CDN (Chart.js, SheetJS/XLSX e a fonte Manrope). Se estiver offline, os gráficos e a exportação/importação de Excel não funcionam, mas o resto do app continua normal.
 
+## Instalar como app (PWA)
+
+O Bills é um PWA — dá pra instalar como um app de verdade, com ícone próprio, sem barra de navegador, e funcionando offline pro essencial. **Só funciona pelo link publicado** (ex: GitHub Pages) ou servindo localmente por `http://` — abrir o `index.html` direto (`file://`) não habilita a instalação, é uma restrição do navegador.
+
+- **Android (Chrome)**: abre o link → menu (⋮) → **"Instalar app"** (ou o próprio Chrome sugere um banner de instalação).
+- **iPhone (Safari)**: abre o link → botão de **Compartilhar** → **"Adicionar à Tela de Início"**.
+- **Desktop (Chrome/Edge)**: ícone de instalação (⊕) que aparece na barra de endereço.
+
+Depois de instalado, abre direto pelo ícone, sem precisar digitar o link toda vez.
+
 ## Onde ficam seus dados
 
 Tudo é salvo no **localStorage do seu navegador**, no seu computador ou celular. Nada é enviado para nenhum servidor. Se você limpar os dados do navegador (ou usar outro navegador/dispositivo), os dados não acompanham — por isso vale usar **Configurações → Exportar backup (JSON)** de vez em quando.
@@ -27,6 +37,9 @@ styles.css    → tema claro/escuro, todos os componentes visuais
 storage.js    → salvar/carregar dados, backup, dados iniciais
 finance.js    → toda a lógica: parcelas, projeções, timeline de dívidas, insights, Excel
 app.js        → telas, navegação, formulários e eventos
+manifest.json → metadados do PWA (nome, ícones, cores)
+sw.js         → service worker (cache do app shell, funciona offline)
+icons/        → ícones do app (PWA + tela de início)
 ```
 
 ## Primeiro uso

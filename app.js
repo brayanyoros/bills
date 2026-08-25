@@ -186,7 +186,7 @@
     html += '<div style="display:flex;flex-direction:column;gap:16px">';
     html += '<div class="card">' +
       '<span class="section-title">Resumo do mês</span>' +
-      '<div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-top:12px">' +
+      '<div class="stat-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-top:12px">' +
       statCardMini('Recebi', F.formatBRL(s.recebidos), 'pos') +
       statCardMini('Gastei', F.formatBRL(s.comprometido), 'neg') +
       statCardMini('Sobra', F.formatBRL(s.saldoMes), s.saldoMes >= 0 ? 'pos' : 'neg') +
@@ -231,7 +231,7 @@
     var s = F.computeMonthSummary(state, monthCursor);
     var html = '';
     html += monthSwitcher();
-    html += '<div class="stat-grid" style="grid-template-columns:repeat(3,1fr)">' +
+    html += '<div class="stat-grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">' +
       statCardMini('Entradas', F.formatBRL(s.recebidos), s.recebidos >= 0 ? 'pos' : 'neg') +
       statCardMini('Saídas', F.formatBRL(s.comprometido), 'neg') +
       statCardMini('Saldo do mês', F.formatBRL(s.saldoMes), s.saldoMes >= 0 ? 'pos' : 'neg') +
