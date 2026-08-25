@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Norte — Organizador Financeiro</title>
+<meta name="description" content="Organizador financeiro pessoal — receitas, despesas, parcelamentos e projeções." />
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app-shell">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-top">
+      <div class="brand">
+        <span class="brand-mark"></span>
+        <span class="brand-name">Norte</span>
+      </div>
+      <button class="icon-btn sidebar-close" id="sidebarCloseBtn" aria-label="Fechar menu">✕</button>
+    </div>
+    <nav class="sidebar-nav" id="sidebarNav" aria-label="Navegação principal">
+      <button class="nav-item" data-view="overview"><span class="nav-ico">◍</span>Visão Geral</button>
+      <button class="nav-item" data-view="month"><span class="nav-ico">▤</span>Mês</button>
+      <button class="nav-item" data-view="calendar"><span class="nav-ico">▦</span>Calendário</button>
+      <button class="nav-item" data-view="debts"><span class="nav-ico">◆</span>Dívidas</button>
+      <button class="nav-item" data-view="extra"><span class="nav-ico">◈</span>Renda Extra</button>
+      <button class="nav-item" data-view="projection"><span class="nav-ico">▲</span>Projeção</button>
+      <button class="nav-item" data-view="reports"><span class="nav-ico">▥</span>Relatórios</button>
+      <button class="nav-item" data-view="settings"><span class="nav-ico">⚙</span>Configurações</button>
+    </nav>
+    <div class="sidebar-bottom">
+      <button class="theme-toggle" id="themeToggle">
+        <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
+        <span class="theme-toggle-label" id="themeToggleLabel">Modo escuro</span>
+      </button>
+      <p class="sidebar-note">Seus dados ficam só neste navegador.</p>
+    </div>
+  </aside>
+
+  <div class="sidebar-scrim" id="sidebarScrim" hidden></div>
+
+  <div class="app-main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Abrir menu">☰</button>
+      <h1 class="topbar-title" id="topbarTitle">Visão Geral</h1>
+      <div class="topbar-actions">
+        <button class="icon-btn topbar-theme" id="themeToggleTop" aria-label="Alternar tema">◐</button>
+        <button class="btn btn-primary btn-new" id="newLaunchBtn"><span>+</span> Novo</button>
+      </div>
+    </header>
+
+    <div class="persistence-banner" id="persistenceBanner" hidden>
+      ⚠️ Este navegador não está conseguindo salvar seus dados. Nada será mantido ao fechar a página — abra o arquivo em um navegador completo (Chrome ou Firefox), não em um visualizador de arquivos.
+    </div>
+
+    <main class="main-content" id="mainContent">
+      <section class="view" id="view-overview"></section>
+      <section class="view" id="view-month" hidden></section>
+      <section class="view" id="view-calendar" hidden></section>
+      <section class="view" id="view-debts" hidden></section>
+      <section class="view" id="view-extra" hidden></section>
+      <section class="view" id="view-projection" hidden></section>
+      <section class="view" id="view-reports" hidden></section>
+      <section class="view" id="view-settings" hidden></section>
+    </main>
+
+    <nav class="bottom-nav" id="bottomNav" aria-label="Navegação">
+      <button class="bn-item" data-view="overview"><span class="bn-ico">◍</span><span>Início</span></button>
+      <button class="bn-item" data-view="month"><span class="bn-ico">▤</span><span>Mês</span></button>
+      <button class="bn-fab" id="newLaunchBtnMobile" aria-label="Novo lançamento">+</button>
+      <button class="bn-item" data-view="debts"><span class="bn-ico">◆</span><span>Dívidas</span></button>
+      <button class="bn-item" data-view="reports"><span class="bn-ico">▥</span><span>Mais</span></button>
+    </nav>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" hidden>
+  <div class="modal" id="modalRoot" role="dialog" aria-modal="true"></div>
+</div>
+
+<div class="sheet-overlay" id="sheetOverlay" hidden>
+  <div class="sheet" id="sheetRoot" role="menu"></div>
+</div>
+
+<div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="storage.js"></script>
+<script src="finance.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
