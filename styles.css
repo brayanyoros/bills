@@ -21,17 +21,22 @@
   --warning-soft:  rgba(245,165,36,.13);
   --danger:        #FF5A56;
   --danger-soft:   rgba(255,90,86,.13);
-  --info:          #4E9BFF;
-  --info-soft:     rgba(78,155,255,.13);
+  --info:          #00A7FA;
+  --info-soft:     rgba(0,167,250,.14);
   --teal:          #2FE2C6;
   --teal-soft:     rgba(47,226,198,.13);
+  --accent-2:      #204BEE;
+  --accent-3:      #07239B;
+
+  --brand-cta-bg:   #F5F6F7;
+  --brand-cta-text: #0A0A11;
 
   --shadow-1: 0 1px 2px rgba(0,0,0,.6);
   --shadow-2: 0 8px 28px rgba(0,0,0,.55);
   --shadow-3: 0 20px 60px rgba(0,0,0,.65);
 
-  --font-display: 'Inter', system-ui, sans-serif;
-  --font-body:    'Inter', system-ui, sans-serif;
+  --font-display: 'Manrope', system-ui, sans-serif;
+  --font-body:    'Manrope', system-ui, sans-serif;
 
   --radius-sm: 10px;
   --radius-md: 14px;
@@ -47,17 +52,18 @@
 }
 
 [data-theme="light"]{
-  --bg:            #F3F4F7;
-  --bg-soft:       #ECEDF2;
+  /* Bills — Frost Mist / Electric Azure / Cobalt Pulse / Midnight Sapphire */
+  --bg:            #D8E5E4;
+  --bg-soft:       #CFE0DE;
   --surface:       #FFFFFF;
-  --surface-2:     #F7F8FA;
-  --surface-3:     #EEF0F4;
-  --border:        #E2E5EB;
-  --border-soft:   #EBEDF1;
+  --surface-2:     #F2F6F5;
+  --surface-3:     #E7EDEC;
+  --border:        #C7D6D4;
+  --border-soft:   #DCE6E4;
 
-  --text-1:        #171A21;
-  --text-2:        #5B6472;
-  --text-3:        #8A93A3;
+  --text-1:        #12181B;
+  --text-2:        #5B6B6C;
+  --text-3:        #8B9A99;
 
   --positive:      #0EA473;
   --positive-soft: rgba(14,164,115,.10);
@@ -65,10 +71,15 @@
   --warning-soft:  rgba(194,121,10,.10);
   --danger:        #D6473C;
   --danger-soft:   rgba(214,71,60,.10);
-  --info:          #2F6FED;
-  --info-soft:     rgba(47,111,237,.10);
+  --info:          #00A7FA;
+  --info-soft:     rgba(0,167,250,.12);
   --teal:          #159C8C;
   --teal-soft:     rgba(21,156,140,.10);
+  --accent-2:      #204BEE;
+  --accent-3:      #07239B;
+
+  --brand-cta-bg:   #12181B;
+  --brand-cta-text: #FFFFFF;
 
   --shadow-1: 0 1px 2px rgba(20,23,30,.06);
   --shadow-2: 0 8px 24px rgba(20,23,30,.08);
@@ -134,10 +145,8 @@ label{ font-size:12.5px; color:var(--text-2); font-weight:600; display:block; ma
 }
 .sidebar-top{ display:flex; align-items:center; justify-content:space-between; padding:4px 8px 22px; }
 .brand{ display:flex; align-items:center; gap:10px; }
-.brand-mark{
-  width:26px; height:26px; border-radius:8px;
-  background:linear-gradient(135deg, var(--positive), var(--info));
-}
+.brand-mark{ width:26px; height:26px; display:inline-flex; }
+.brand-mark svg{ width:100%; height:100%; }
 .brand-name{ font-family:var(--font-display); font-weight:700; font-size:17px; letter-spacing:-.01em; }
 .sidebar-close{ display:none; }
 
@@ -194,7 +203,7 @@ label{ font-size:12.5px; color:var(--text-2); font-weight:600; display:block; ma
   border:1px solid transparent; transition:transform .1s ease, background-color .15s ease, border-color .15s ease;
 }
 .btn:active{ transform:scale(.97); }
-.btn-primary{ background:var(--positive); color:#052017; }
+.btn-primary{ background:var(--brand-cta-bg); color:var(--brand-cta-text); }
 .btn-primary:hover{ filter:brightness(1.06); }
 .btn-secondary{ background:var(--surface-2); color:var(--text-1); border-color:var(--border); }
 .btn-secondary:hover{ border-color:var(--text-3); }
@@ -503,7 +512,7 @@ table.rep-table tr:hover td{ background:var(--surface-2); }
   .bn-item.active{ color:var(--positive); }
   .bn-ico{ font-size:17px; display:inline-flex; align-items:center; justify-content:center; }
   .bn-ico svg{ width:19px; height:19px; fill:currentColor; }
-  .bn-fab{ width:48px; height:48px; border-radius:50%; background:var(--positive); color:#052017; font-size:22px; font-weight:800; display:flex; align-items:center; justify-content:center; margin-top:-22px; box-shadow:var(--shadow-2); }
+  .bn-fab{ width:48px; height:48px; border-radius:50%; background:var(--brand-cta-bg); color:var(--brand-cta-text); font-size:22px; font-weight:800; display:flex; align-items:center; justify-content:center; margin-top:-22px; box-shadow:var(--shadow-2); }
   .hero-amount{ font-size:34px; }
   .stat-grid{ grid-template-columns:repeat(2,1fr); }
   .grid-2{ grid-template-columns:1fr; }

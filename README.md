@@ -1,4 +1,4 @@
-# Norte — Organizador Financeiro Pessoal
+# Bills — Organizador Financeiro Pessoal
 
 Dashboard financeiro pessoal, 100% local (sem backend, sem servidor, sem envio de dados para fora do seu navegador).
 
@@ -8,12 +8,12 @@ Dashboard financeiro pessoal, 100% local (sem backend, sem servidor, sem envio d
 
 **Se preferir servir localmente** (opcional, evita qualquer restrição de alguns navegadores com arquivos locais):
 ```bash
-cd norte-financeiro
+cd bills
 python3 -m http.server 8000
 # depois acesse http://localhost:8000
 ```
 
-Os únicos recursos que exigem internet são as bibliotecas carregadas por CDN (Chart.js, SheetJS/XLSX e a fonte Inter). Se estiver offline, os gráficos e a exportação/importação de Excel não funcionam, mas o resto do app continua normal.
+Os únicos recursos que exigem internet são as bibliotecas carregadas por CDN (Chart.js, SheetJS/XLSX e a fonte Manrope). Se estiver offline, os gráficos e a exportação/importação de Excel não funcionam, mas o resto do app continua normal.
 
 ## Onde ficam seus dados
 

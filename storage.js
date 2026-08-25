@@ -27,7 +27,7 @@
       var parsed = JSON.parse(raw);
       return migrate(parsed);
     } catch (e) {
-      console.error('Norte: estado salvo corrompido, recriando dados iniciais.', e);
+      console.error('Bills: estado salvo corrompido, recriando dados iniciais.', e);
       var fresh2 = emptyState();
       save(fresh2);
       return fresh2;
@@ -51,7 +51,7 @@
       global.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       return true;
     } catch (e) {
-      console.error('Norte: falha ao salvar no localStorage.', e);
+      console.error('Bills: falha ao salvar no localStorage.', e);
       return false;
     }
   }
@@ -105,7 +105,7 @@
     var payload = deepClone(state);
     payload.exportedAt = new Date().toISOString();
     var stamp = new Date().toISOString().slice(0, 10);
-    downloadBlob(JSON.stringify(payload, null, 2), 'norte-backup-' + stamp + '.json', 'application/json');
+    downloadBlob(JSON.stringify(payload, null, 2), 'bills-backup-' + stamp + '.json', 'application/json');
   }
 
   function importJSONFile(file, onDone, onError) {
@@ -114,7 +114,7 @@
       try {
         var parsed = JSON.parse(reader.result);
         if (!parsed || typeof parsed !== 'object' || !('debtGroups' in parsed)) {
-          throw new Error('Arquivo não parece ser um backup válido do Norte.');
+          throw new Error('Arquivo não parece ser um backup válido do Bills.');
         }
         onDone(migrate(parsed));
       } catch (e) {

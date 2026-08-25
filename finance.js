@@ -166,7 +166,11 @@
 
   function salaryForMonth(state, monthKey) {
     var ov = state.settings.salaryOverrides && state.settings.salaryOverrides[monthKey];
-    return (ov !== undefined && ov !== null) ? ov : state.settings.salaryDefault;
+    if (ov !== undefined && ov !== null) return ov;
+    // O "salário padrão" só vale a partir do mês inicial controlado — meses
+    // anteriores (sem valor próprio definido) não herdam o valor "futuro".
+    if (compareMonthKey(monthKey, state.settings.epochMonth) < 0) return 0;
+    return state.settings.salaryDefault;
   }
 
   function extraIncomeForMonth(state, monthKey) {
@@ -420,7 +424,7 @@
     wb.SheetNames.unshift(wb.SheetNames.pop());
 
     var stamp = new Date().toISOString().slice(0, 10);
-    XLSX.writeFile(wb, 'norte-financeiro-' + stamp + '.xlsx');
+    XLSX.writeFile(wb, 'bills-' + stamp + '.xlsx');
   }
 
   function round2(v) { return Math.round((v + Number.EPSILON) * 100) / 100; }
