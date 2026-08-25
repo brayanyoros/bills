@@ -1119,4 +1119,15 @@
   qs('#persistenceBanner').hidden = persistenceOk;
   setView('overview');
 
+  // A largura da pílula do menu é medida via getBoundingClientRect() logo após
+  // trocar de view. Se a fonte (carregada por CDN) ainda não tiver terminado de
+  // carregar nesse instante, os botões reflow depois e a medição fica errada —
+  // a pílula usa border-radius:999px, então uma largura errada demais vira
+  // visualmente um círculo em vez do formato de pílula. Recalcula assim que as
+  // fontes terminarem de carregar (e de novo logo depois, por segurança).
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function () { updateBottomNavPill(); });
+  }
+  setTimeout(updateBottomNavPill, 400);
+
 })();
