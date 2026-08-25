@@ -30,8 +30,8 @@
 
   --brand-cta-bg:    linear-gradient(135deg, var(--info), var(--accent-2));
   --brand-cta-text:  #FFFFFF;
-  --glow-accent:     0 0 24px rgba(0,167,250,.28);
-  --glow-accent-soft: 0 0 40px rgba(32,75,238,.16);
+  --glow-accent:     0 0 0 transparent;
+  --glow-accent-soft: 0 0 0 transparent;
   --glass-blur:      blur(26px);
   --track-bg:        rgba(255,255,255,.12);
   --nav-bg:          rgba(17,15,26,.92);
@@ -85,8 +85,8 @@
 
   --brand-cta-bg:    linear-gradient(135deg, var(--info), var(--accent-2));
   --brand-cta-text:  #FFFFFF;
-  --glow-accent:     0 0 20px rgba(0,167,250,.22);
-  --glow-accent-soft: 0 0 32px rgba(32,75,238,.12);
+  --glow-accent:     0 0 0 transparent;
+  --glow-accent-soft: 0 0 0 transparent;
   --glass-blur:      blur(20px);
   --track-bg:        rgba(7,35,155,.10);
   --nav-bg:          rgba(255,255,255,.90);
@@ -112,19 +112,6 @@ body{
   -webkit-font-smoothing:antialiased;
   font-variant-numeric: tabular-nums;
   transition:background-color .25s ease, color .25s ease;
-  position:relative;
-}
-body::before{
-  content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
-  background:
-    radial-gradient(46vw 46vw at 82% 4%, rgba(0,167,250,.38), transparent 62%),
-    radial-gradient(40vw 40vw at 6% 30%, rgba(47,226,198,.22), transparent 58%),
-    radial-gradient(50vw 50vw at 30% 92%, rgba(32,75,238,.32), transparent 60%),
-    radial-gradient(38vw 38vw at 92% 78%, rgba(7,35,155,.30), transparent 55%);
-}
-body::after{
-  content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.5;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
 }
 h1,h2,h3,h4{ font-family:var(--font-display); margin:0; letter-spacing:-.01em; }
 p{ margin:0; }
