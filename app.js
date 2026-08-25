@@ -428,14 +428,14 @@
     var ctx = qs('#chartProjection');
     if (!ctx) return;
     if (charts.projection) charts.projection.destroy();
-    var textColor = cssVar('text-2'), gridColor = cssVar('border-soft'), posColor = cssVar('positive');
+    var textColor = cssVar('text-2'), gridColor = cssVar('border-soft'), accentColor = cssVar('info');
     charts.projection = new Chart(ctx.getContext('2d'), {
       type: 'line',
       data: {
         labels: rows.map(function (r) { return r.label; }),
         datasets: [{
           label: 'Saldo projetado', data: rows.map(function (r) { return F.round2(r.saldo); }),
-          borderColor: posColor, backgroundColor: hexToRgba(posColor, .12), fill: true, tension: .35, pointRadius: 3
+          borderColor: accentColor, backgroundColor: hexToRgba(accentColor, .14), fill: true, tension: .35, pointRadius: 3
         }]
       },
       options: {
