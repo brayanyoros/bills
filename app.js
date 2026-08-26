@@ -273,8 +273,8 @@
     html += monthSwitcher();
     html += '<div class="stat-grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">' +
       statCardMini('Entradas', F.formatBRL(s.recebidos), s.recebidos >= 0 ? 'pos' : 'neg') +
-      statCardMini('Saídas', F.formatBRL(s.comprometido), 'neg') +
-      statCardMini('Saldo do mês', F.formatBRL(s.saldoMes), s.saldoMes >= 0 ? 'pos' : 'neg') +
+      statCardMini('Saídas em aberto', F.formatBRL(s.comprometidoAberto), 'neg') +
+      statCardMini('Saldo em conta', F.formatBRL(s.saldoEmConta), s.saldoEmConta >= 0 ? 'pos' : 'neg') +
       '</div>';
 
     if (s.caixaAnterior !== 0) {
@@ -309,7 +309,7 @@
     var selectedIds = s.expenses.filter(function (e) { return selectedExpenses[e.id]; });
     var selectedTotal = selectedIds.reduce(function (sum, e) { return sum + e.amount; }, 0);
 
-    html += '<div class="card"><div class="section-head"><span class="section-title">Saídas</span><span class="section-sub money">Total: ' + F.formatBRL(s.comprometido) + '</span></div>';
+    html += '<div class="card"><div class="section-head"><span class="section-title">Saídas</span><span class="section-sub money">Em aberto: ' + F.formatBRL(s.comprometidoAberto) + '</span></div>';
     if (s.expenses.length) {
       html += '<div class="settings-row" style="margin-top:10px"><div class="settings-row-text"><div class="settings-row-title">' + (selectedIds.length ? selectedIds.length + ' selecionada(s)' : 'Selecionar saídas') + '</div><div class="settings-row-sub">Marque as contas pra somar quanto precisa separar</div></div>' +
         (selectedIds.length ? '<span class="money pos" style="font-weight:800;font-size:16px">' + F.formatBRL(selectedTotal) + '</span><button class="btn btn-ghost btn-sm" data-action="clear-selected-expenses">Limpar</button>' : '') +
@@ -317,7 +317,7 @@
     }
     html += '<div style="margin-top:12px">';
     if (s.expenses.length) {
-      html += groupByPriority(s.expenses, function (e) { return e.amount; }).map(function (g) {
+      html += groupByPriority(s.expenses, function (e) { return e.status === 'paid' ? 0 : e.amount; }).map(function (g) {
         return '<div class="priority-group">' + priorityGroupHead(g) +
           '<div class="tx-list">' + g.items.map(function (e) { return txRow(e, { selectable: true }); }).join('') + '</div></div>';
       }).join('');
