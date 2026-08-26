@@ -316,11 +316,14 @@ label{ font-size:12.5px; color:var(--text-2); font-weight:600; display:block; ma
 .tx-list{ display:flex; flex-direction:column; gap:8px; }
 .tx-select{ width:18px; height:18px; padding:0; margin:0; flex:0 0 auto; accent-color:var(--info); background:none; border:none; cursor:pointer; }
 .tx-row{
-  display:flex; align-items:center; gap:12px; padding:13px 14px;
+  display:flex; flex-direction:column; gap:8px; padding:13px 14px;
   background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius-md);
   transition:border-color .15s ease;
 }
 .tx-row:hover{ border-color:var(--border); }
+.tx-row-top{ display:flex; align-items:center; gap:12px; min-width:0; }
+.tx-row-bottom{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding-left:54px; min-width:0; }
+.tx-row-bottom-right{ display:flex; align-items:center; gap:4px; flex:0 0 auto; }
 .tx-day{
   width:42px; height:42px; border-radius:11px; background:var(--surface-2);
   display:flex; flex-direction:column; align-items:center; justify-content:center; flex:0 0 auto;
@@ -329,10 +332,9 @@ label{ font-size:12.5px; color:var(--text-2); font-weight:600; display:block; ma
 .tx-day-mon{ font-size:8.5px; color:var(--text-3); text-transform:uppercase; font-weight:700; margin-top:1px; }
 .tx-info{ flex:1; min-width:0; }
 .tx-name{ font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.tx-meta{ font-size:12px; color:var(--text-3); margin-top:2px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
-.tx-right{ display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex:0 0 auto; }
-.tx-amount{ font-size:14.5px; font-weight:800; }
-.tx-actions{ display:flex; gap:4px; }
+.tx-meta{ font-size:12px; color:var(--text-3); display:flex; align-items:center; gap:6px; flex-wrap:wrap; min-width:0; overflow:hidden; }
+.tx-amount{ font-size:14.5px; font-weight:800; flex:0 0 auto; white-space:nowrap; }
+.tx-actions{ display:flex; gap:4px; flex:0 0 auto; }
 .tx-row.is-paid{ opacity:.55; }
 .tx-amount.pos{ color:var(--positive); }
 .tx-amount.neg{ color:var(--danger); }

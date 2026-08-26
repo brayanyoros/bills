@@ -118,11 +118,16 @@
     }
     var checkbox = selectable ? '<input type="checkbox" class="tx-select" data-action="toggle-select-expense" data-id="' + e.id + '" data-amount="' + e.amount + '" ' + (selectedExpenses[e.id] ? 'checked' : '') + '>' : '';
     return '<div class="tx-row ' + (isIncome ? 'is-income' : '') + ' ' + (e.status === 'paid' ? 'is-paid' : '') + '">' +
+      '<div class="tx-row-top">' +
       checkbox +
       '<div class="tx-day"><span class="tx-day-num">' + (day || '·') + '</span><span class="tx-day-mon">' + mon + '</span></div>' +
-      '<div class="tx-info"><div class="tx-name">' + escapeHtml(e.name) + '</div><div class="tx-meta">' + metaParts.map(function (m) { return '<span>' + m + '</span>'; }).join('<span>•</span>') + '</div></div>' +
-      '<div class="tx-right"><div class="tx-amount ' + (isIncome ? (e.amount < 0 ? 'neg' : 'pos') : '') + '">' + F.formatBRL(e.amount) + '</div>' + (!isIncome ? statusBadge(e.status) : '') + '</div>' +
-      actions +
+      '<div class="tx-info"><div class="tx-name">' + escapeHtml(e.name) + '</div></div>' +
+      '<div class="tx-amount ' + (isIncome ? (e.amount < 0 ? 'neg' : 'pos') : '') + '">' + F.formatBRL(e.amount) + '</div>' +
+      '</div>' +
+      '<div class="tx-row-bottom">' +
+      '<div class="tx-meta">' + metaParts.map(function (m) { return '<span>' + m + '</span>'; }).join('<span>•</span>') + '</div>' +
+      '<div class="tx-row-bottom-right">' + (!isIncome ? statusBadge(e.status) : '') + actions + '</div>' +
+      '</div>' +
       '</div>';
   }
 
@@ -345,7 +350,8 @@
     var idx = F.monthDiff(d.startMonth, monthCursor);
     var current = Math.min(Math.max(idx + 1, 1), d.installments || (idx + 1));
     var progress = d.installments ? Math.min(100, Math.max(0, (current / d.installments) * 100)) : null;
-    return '<div class="tx-row" style="align-items:flex-start">' +
+    return '<div class="tx-row">' +
+      '<div class="tx-row-top" style="align-items:flex-start">' +
       '<div class="tx-day"><span class="tx-day-num">' + d.dueDay + '</span><span class="tx-day-mon">dia</span></div>' +
       '<div class="tx-info">' +
       '<div class="tx-name">' + priorityDot(d.priority) + ' ' + escapeHtml(d.name) + '</div>' +
@@ -355,6 +361,7 @@
       (progress !== null ? '<div class="progress" style="margin-top:8px;max-width:220px"><div class="progress-fill" style="width:' + progress + '%"></div></div>' : '') +
       '</div>' +
       '<div class="tx-actions"><button class="icon-btn btn-sm" data-action="edit-debt" data-id="' + d.id + '" title="Editar">✎</button><button class="icon-btn btn-sm" data-action="delete-debt" data-id="' + d.id + '" title="Excluir">🗑</button></div>' +
+      '</div>' +
       '</div>';
   }
 
@@ -402,10 +409,12 @@
 
     html += '<div class="card"><span class="section-title">Entradas do mês</span><div class="tx-list" style="margin-top:12px">';
     html += entries.length ? entries.map(function (e) {
-      return '<div class="tx-row is-income"><div class="tx-day"><span class="tx-day-num">' + e.date.split('-')[2] + '</span><span class="tx-day-mon">' + F.MONTH_NAMES_SHORT[parseInt(e.date.split('-')[1], 10) - 1] + '</span></div>' +
+      return '<div class="tx-row is-income"><div class="tx-row-top">' +
+        '<div class="tx-day"><span class="tx-day-num">' + e.date.split('-')[2] + '</span><span class="tx-day-mon">' + F.MONTH_NAMES_SHORT[parseInt(e.date.split('-')[1], 10) - 1] + '</span></div>' +
         '<div class="tx-info"><div class="tx-name">' + escapeHtml(e.label || 'Renda extra') + '</div></div>' +
-        '<div class="tx-right"><div class="tx-amount ' + (e.amount < 0 ? 'neg' : 'pos') + '">' + F.formatBRL(e.amount) + '</div></div>' +
-        '<div class="tx-actions"><button class="icon-btn btn-sm" data-action="delete-extra" data-id="' + e.id + '" title="Excluir">🗑</button></div></div>';
+        '<div class="tx-amount ' + (e.amount < 0 ? 'neg' : 'pos') + '">' + F.formatBRL(e.amount) + '</div>' +
+        '<div class="tx-actions"><button class="icon-btn btn-sm" data-action="delete-extra" data-id="' + e.id + '" title="Excluir">🗑</button></div>' +
+        '</div></div>';
     }).join('') : emptyState('◈', 'Nenhuma entrada registrada neste mês.');
     html += '</div></div>';
 
@@ -435,16 +444,20 @@
       html += '<div class="tx-list" style="margin-top:12px">' + inv.pockets.map(function (p, i) {
         var color = 'var(--' + POCKET_PALETTE[i % POCKET_PALETTE.length] + ')';
         var pct = inv.totalBalance > 0 ? Math.round((p.balance / inv.totalBalance) * 100) : 0;
-        return '<div class="tx-row"><span class="priority-dot" style="width:12px;height:12px;background:' + color + '"></span>' +
-          '<div class="tx-info"><div class="tx-name">' + escapeHtml(p.name) + '</div><div class="tx-meta"><span>' + pct + '% do total</span>' +
-          (p.yieldThisMonth ? '<span>•</span><span class="pos">+' + F.formatBRL(p.yieldThisMonth) + ' este mês</span>' : '') + '</div></div>' +
-          '<div class="tx-right"><div class="tx-amount">' + F.formatBRL(p.balance) + '</div></div>' +
-          '<div class="tx-actions">' +
+        return '<div class="tx-row"><div class="tx-row-top">' +
+          '<span class="priority-dot" style="width:12px;height:12px;background:' + color + '"></span>' +
+          '<div class="tx-info"><div class="tx-name">' + escapeHtml(p.name) + '</div></div>' +
+          '<div class="tx-amount">' + F.formatBRL(p.balance) + '</div>' +
+          '</div>' +
+          '<div class="tx-row-bottom" style="padding-left:20px">' +
+          '<div class="tx-meta"><span>' + pct + '% do total</span>' +
+          (p.yieldThisMonth ? '<span>•</span><span class="pos">+' + F.formatBRL(p.yieldThisMonth) + ' este mês</span>' : '') + '</div>' +
+          '<div class="tx-row-bottom-right tx-actions">' +
           '<button class="icon-btn btn-sm" data-action="pocket-deposit" data-id="' + p.id + '" title="Depositar">↑</button>' +
           '<button class="icon-btn btn-sm" data-action="pocket-withdraw" data-id="' + p.id + '" title="Sacar">↓</button>' +
           '<button class="icon-btn btn-sm" data-action="edit-pocket" data-id="' + p.id + '" title="Renomear">✎</button>' +
           '<button class="icon-btn btn-sm" data-action="delete-pocket" data-id="' + p.id + '" title="Excluir">🗑</button>' +
-          '</div></div>';
+          '</div></div></div>';
       }).join('') + '</div>';
     }
     html += '</div>';
