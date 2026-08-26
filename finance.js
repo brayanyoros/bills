@@ -196,7 +196,7 @@
     if (compareMonthKey(monthKey, epoch) < 0) return 0;
     var prev = addMonths(monthKey, -1);
     var prevSummary = computeMonthSummary(state, prev);
-    return prevSummary.saldoMes;
+    return prevSummary.saldoEmConta;
   }
 
   function generateIncomesForMonth(state, monthKey, includeCaixaAnterior) {
@@ -293,8 +293,9 @@
     var expensesUnpaidPriority = expenses.filter(function (e) { return e.status !== 'paid' && (e.priority === 'urgent' || e.priority === 'important'); }).reduce(function (s, e) { return s + e.amount; }, 0);
     var expensesUnpaidUrgent = expenses.filter(function (e) { return e.status !== 'paid' && e.priority === 'urgent'; }).reduce(function (s, e) { return s + e.amount; }, 0);
 
-    var saldoMes = totalIncome - comprometido - investedNet; // saldo simples do mês (para projeção e carry-over)
-    var saldoEmConta = caixaAnterior + recebidos - expensesPaid - investedNet;
+    var comprometidoAberto = comprometido - expensesPaid; // só o que ainda falta pagar este mês
+    var saldoMes = totalIncome - comprometido - investedNet; // saldo simples do mês, tratando tudo como se fosse pago (referência/insight)
+    var saldoEmConta = caixaAnterior + recebidos - expensesPaid - investedNet; // dinheiro real: só desconta o que já foi marcado como pago — é isso que vira o "caixa anterior" do próximo mês
     var saldoDisponivel = saldoEmConta - expensesUnpaidPriority;
     var committedPercent = recebidos > 0 ? Math.max(0, Math.min(999, (comprometido / recebidos) * 100)) : 0;
 
@@ -307,6 +308,7 @@
       totalIncome: totalIncome,
       investedNet: investedNet,
       comprometido: comprometido,
+      comprometidoAberto: comprometidoAberto,
       expensesPaid: expensesPaid,
       expensesUnpaidPriority: expensesUnpaidPriority,
       expensesUnpaidUrgent: expensesUnpaidUrgent,
