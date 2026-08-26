@@ -149,6 +149,10 @@
       actions = '<div class="tx-actions">' +
         '<button class="icon-btn btn-sm" data-action="edit-salary" data-month="' + e.monthKey + '" title="Editar salário do mês">✎</button>' +
         '</div>';
+    } else if (opts.extraEntry) {
+      actions = '<div class="tx-actions">' +
+        '<button class="icon-btn btn-sm" data-action="delete-extra" data-id="' + e.sourceId + '" title="Excluir">🗑</button>' +
+        '</div>';
     }
     var checkbox = selectable ? '<input type="checkbox" class="tx-select" data-action="toggle-select-expense" data-id="' + e.id + '" data-amount="' + e.amount + '" ' + (selectedExpenses[e.id] ? 'checked' : '') + '>' : '';
     return '<div class="tx-row ' + (isIncome ? 'is-income' : '') + ' ' + (e.status === 'paid' ? 'is-paid' : '') + '">' +
@@ -285,10 +289,22 @@
 
     var manualIncomeIds = {};
     (state.manualIncomes || []).forEach(function (i) { manualIncomeIds[i.id] = true; });
+    // A entrada "Renda Extra" no resumo é um total agregado (várias entradas da aba Extra
+    // somadas) — pra poder excluir individualmente, troca essa linha única pelas entradas
+    // que a compõem, cada uma com sua própria ação de excluir.
+    var extraEntries = F.extraIncomeForMonth(state, monthCursor);
+    var incomeRows = s.incomes.filter(function (i) { return !i.isCarry && i.sourceId !== 'extra'; }).map(function (i) {
+      return txRow(i, { editableIncome: !!manualIncomeIds[i.sourceId], editSalary: true });
+    }).concat(extraEntries.map(function (entry) {
+      var e = {
+        id: 'extra_' + entry.id, sourceId: entry.id, monthKey: monthCursor, type: 'income',
+        name: entry.label || 'Renda extra', category: 'Renda Extra', amount: entry.amount,
+        dueDay: entry.date ? parseInt(entry.date.split('-')[2], 10) : null
+      };
+      return txRow(e, { extraEntry: true });
+    }));
     html += '<div class="card"><div class="section-head"><span class="section-title">Entradas</span><span class="section-sub money">Total: ' + F.formatBRL(s.recebidos) + '</span></div>' +
-      '<div class="tx-list" style="margin-top:12px">' + s.incomes.filter(function (i) { return !i.isCarry; }).map(function (i) {
-        return txRow(i, { editableIncome: !!manualIncomeIds[i.sourceId], editSalary: true });
-      }).join('') + '</div></div>';
+      '<div class="tx-list" style="margin-top:12px">' + incomeRows.join('') + '</div></div>';
 
     var selectedIds = s.expenses.filter(function (e) { return selectedExpenses[e.id]; });
     var selectedTotal = selectedIds.reduce(function (sum, e) { return sum + e.amount; }, 0);
