@@ -140,6 +140,15 @@
         '<button class="icon-btn btn-sm" data-action="edit-debt" data-id="' + e.sourceId + '" title="Editar">✎</button>' +
         '<button class="icon-btn btn-sm" data-action="delete-debt" data-id="' + e.sourceId + '" title="Excluir">🗑</button>' +
         '</div>';
+    } else if (opts.editableIncome) {
+      actions = '<div class="tx-actions">' +
+        '<button class="icon-btn btn-sm" data-action="edit-income" data-id="' + e.sourceId + '" title="Editar">✎</button>' +
+        '<button class="icon-btn btn-sm" data-action="delete-income" data-id="' + e.sourceId + '" title="Excluir">🗑</button>' +
+        '</div>';
+    } else if (opts.editSalary && e.sourceId === 'salary') {
+      actions = '<div class="tx-actions">' +
+        '<button class="icon-btn btn-sm" data-action="edit-salary" data-month="' + e.monthKey + '" title="Editar salário do mês">✎</button>' +
+        '</div>';
     }
     var checkbox = selectable ? '<input type="checkbox" class="tx-select" data-action="toggle-select-expense" data-id="' + e.id + '" data-amount="' + e.amount + '" ' + (selectedExpenses[e.id] ? 'checked' : '') + '>' : '';
     return '<div class="tx-row ' + (isIncome ? 'is-income' : '') + ' ' + (e.status === 'paid' ? 'is-paid' : '') + '">' +
@@ -274,8 +283,12 @@
       html += '<div class="settings-row"><div class="settings-row-text"><div class="settings-row-title">' + (isDeposit ? 'Alocado em caixinhas' : 'Resgatado de caixinhas') + ' este mês</div><div class="settings-row-sub">Não é despesa — ' + (isDeposit ? 'sai' : 'volta') + ' do saldo do mês</div></div><span class="money ' + (isDeposit ? 'neg' : 'pos') + '" style="font-weight:800;font-size:15px">' + F.formatBRL(Math.abs(s.investedNet)) + '</span></div>';
     }
 
+    var manualIncomeIds = {};
+    (state.manualIncomes || []).forEach(function (i) { manualIncomeIds[i.id] = true; });
     html += '<div class="card"><div class="section-head"><span class="section-title">Entradas</span><span class="section-sub money">Total: ' + F.formatBRL(s.recebidos) + '</span></div>' +
-      '<div class="tx-list" style="margin-top:12px">' + s.incomes.filter(function (i) { return !i.isCarry; }).map(txRow).join('') + '</div></div>';
+      '<div class="tx-list" style="margin-top:12px">' + s.incomes.filter(function (i) { return !i.isCarry; }).map(function (i) {
+        return txRow(i, { editableIncome: !!manualIncomeIds[i.sourceId], editSalary: true });
+      }).join('') + '</div></div>';
 
     var selectedIds = s.expenses.filter(function (e) { return selectedExpenses[e.id]; });
     var selectedTotal = selectedIds.reduce(function (sum, e) { return sum + e.amount; }, 0);
@@ -771,6 +784,18 @@
     );
   }
 
+  function formSalary(monthKey) {
+    var current = F.salaryForMonth(state, monthKey);
+    openModal(
+      '<div class="modal-head"><span class="modal-title">Salário de ' + F.monthKeyToLabel(monthKey).toLowerCase() + '</span><button class="icon-btn" data-action="close-modal">✕</button></div>' +
+      '<p class="hint" style="margin-bottom:10px">Isso atualiza o salário a partir deste mês (vale pros meses seguintes também, até você mudar de novo — mesma lógica da aba Perfil).</p>' +
+      '<form id="formSalary" data-month="' + monthKey + '">' +
+      '<div class="form-row"><label>Valor (R$)</label><input required type="number" step="0.01" min="0" name="amount" value="' + (current || '') + '"></div>' +
+      '<div class="form-actions"><button type="submit" class="btn btn-primary btn-block">Salvar</button></div>' +
+      '</form>'
+    );
+  }
+
   function formExpense(installmentMode, existing) {
     var e = existing || {};
     var monthVal = e.startMonth || monthCursor;
@@ -882,6 +907,11 @@
     state.extraIncomeEntries = state.extraIncomeEntries.filter(function (e) { return e.id !== id; });
     persist(); renderCurrentView(); showToast('Excluído');
   }
+  function deleteManualIncome(id) {
+    if (!confirm('Excluir esta receita? Essa ação não pode ser desfeita.')) return;
+    state.manualIncomes = state.manualIncomes.filter(function (i) { return i.id !== id; });
+    persist(); renderCurrentView(); showToast('Excluído');
+  }
   function deleteNegotiable(id) {
     if (!confirm('Excluir esta dívida?')) return;
     state.negotiableDebts = state.negotiableDebts.filter(function (d) { return d.id !== id; });
@@ -947,6 +977,7 @@
     if (a === 'unmark-paid') { markPaid(t.dataset.id, t.dataset.month, false); return; }
     if (a === 'delete-debt') { deleteDebt(t.dataset.id); return; }
     if (a === 'delete-extra') { deleteExtra(t.dataset.id); return; }
+    if (a === 'delete-income') { deleteManualIncome(t.dataset.id); return; }
     if (a === 'delete-negotiable') { deleteNegotiable(t.dataset.id); return; }
     if (a === 'delete-pocket') { deletePocket(t.dataset.id); return; }
 
@@ -972,6 +1003,12 @@
       if (d) formExpense(!!(d.installments && d.installments > 1), d);
       return;
     }
+    if (a === 'edit-income') {
+      var inc = state.manualIncomes.find(function (x) { return x.id === t.dataset.id; });
+      if (inc) formIncome(inc);
+      return;
+    }
+    if (a === 'edit-salary') { formSalary(t.dataset.month); return; }
     if (a === 'edit-negotiable') {
       var nd = state.negotiableDebts.find(function (x) { return x.id === t.dataset.id; });
       if (nd) formNegotiable(nd);
@@ -1070,6 +1107,16 @@
       if (id) { var idx = state.manualIncomes.findIndex(function (x) { return x.id === id; }); state.manualIncomes[idx] = Object.assign({ id: id }, payload); }
       else { payload.id = S.uid('inc'); state.manualIncomes.push(payload); }
       persist(); closeModal(); renderCurrentView(); showToast('Receita salva');
+      return;
+    }
+
+    if (form.id === 'formSalary') {
+      var smk = form.dataset.month;
+      var amt = parseFloat(fd.get('amount'));
+      if (isNaN(amt) || amt < 0) { showToast('Informe um valor válido.'); return; }
+      state.settings.salaryOverrides[smk] = amt;
+      F.invalidateCache();
+      persist(); closeModal(); renderCurrentView(); showToast('Salário atualizado');
       return;
     }
 
