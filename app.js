@@ -12,6 +12,7 @@
   var currentView = 'overview';
   var monthCursor = defaultMonthKey();
   var charts = {};
+  var selectedExpenses = {};
 
   function defaultMonthKey() {
     var today = F.todayMonthKey();
@@ -91,14 +92,19 @@
     var m = map[status] || map.pending;
     return '<span class="badge ' + m[0] + '">' + m[1] + '</span>';
   }
-  function priorityDot(p) { return '<span class="priority-dot priority-' + p + '" title="' + F.priorityLabel(p) + '"></span>'; }
+  function priorityDot(p, cycleId) {
+    if (cycleId) return '<span class="priority-dot priority-' + p + ' priority-dot-cycle" data-action="cycle-priority" data-id="' + cycleId + '" title="' + F.priorityLabel(p) + ' — toque pra mudar"></span>';
+    return '<span class="priority-dot priority-' + p + '" title="' + F.priorityLabel(p) + '"></span>';
+  }
 
-  function txRow(e) {
+  function txRow(e, opts) {
+    opts = opts || {};
     var isIncome = e.type === 'income';
+    var selectable = !!opts.selectable && !isIncome;
     var day = e.dueISO ? e.dueISO.split('-')[2] : (e.dueDay || '');
     var mon = e.dueISO ? F.MONTH_NAMES_SHORT[parseInt(e.dueISO.split('-')[1], 10) - 1] : '';
     var metaParts = [];
-    if (!isIncome) metaParts.push(priorityDot(e.priority) + F.priorityLabel(e.priority));
+    if (!isIncome) metaParts.push(priorityDot(e.priority, selectable ? e.sourceId : null) + F.priorityLabel(e.priority));
     if (e.installmentTotal) metaParts.push('Parcela ' + e.installmentCurrent + '/' + e.installmentTotal);
     else if (e.recurring) metaParts.push('Recorrente');
     if (e.category) metaParts.push(e.category);
@@ -110,7 +116,9 @@
         '<button class="icon-btn btn-sm" data-action="delete-debt" data-id="' + e.sourceId + '" title="Excluir">🗑</button>' +
         '</div>';
     }
+    var checkbox = selectable ? '<input type="checkbox" class="tx-select" data-action="toggle-select-expense" data-id="' + e.id + '" data-amount="' + e.amount + '" ' + (selectedExpenses[e.id] ? 'checked' : '') + '>' : '';
     return '<div class="tx-row ' + (isIncome ? 'is-income' : '') + ' ' + (e.status === 'paid' ? 'is-paid' : '') + '">' +
+      checkbox +
       '<div class="tx-day"><span class="tx-day-num">' + (day || '·') + '</span><span class="tx-day-mon">' + mon + '</span></div>' +
       '<div class="tx-info"><div class="tx-name">' + escapeHtml(e.name) + '</div><div class="tx-meta">' + metaParts.map(function (m) { return '<span>' + m + '</span>'; }).join('<span>•</span>') + '</div></div>' +
       '<div class="tx-right"><div class="tx-amount ' + (isIncome ? (e.amount < 0 ? 'neg' : 'pos') : '') + '">' + F.formatBRL(e.amount) + '</div>' + (!isIncome ? statusBadge(e.status) : '') + '</div>' +
@@ -239,8 +247,16 @@
     html += '<div class="card"><div class="section-head"><span class="section-title">Entradas</span><span class="section-sub money">Total: ' + F.formatBRL(s.recebidos) + '</span></div>' +
       '<div class="tx-list" style="margin-top:12px">' + s.incomes.filter(function (i) { return !i.isCarry; }).map(txRow).join('') + '</div></div>';
 
-    html += '<div class="card"><div class="section-head"><span class="section-title">Saídas</span><span class="section-sub money">Total: ' + F.formatBRL(s.comprometido) + '</span></div>' +
-      '<div class="tx-list" style="margin-top:12px">' + (s.expenses.length ? s.expenses.map(txRow).join('') : emptyState('📭', 'Nenhuma despesa cadastrada para este mês.')) + '</div></div>';
+    var selectedIds = s.expenses.filter(function (e) { return selectedExpenses[e.id]; });
+    var selectedTotal = selectedIds.reduce(function (sum, e) { return sum + e.amount; }, 0);
+
+    html += '<div class="card"><div class="section-head"><span class="section-title">Saídas</span><span class="section-sub money">Total: ' + F.formatBRL(s.comprometido) + '</span></div>';
+    if (s.expenses.length) {
+      html += '<div class="settings-row" style="margin-top:10px"><div class="settings-row-text"><div class="settings-row-title">' + (selectedIds.length ? selectedIds.length + ' selecionada(s)' : 'Selecionar saídas') + '</div><div class="settings-row-sub">Marque as contas pra somar quanto precisa separar</div></div>' +
+        (selectedIds.length ? '<span class="money pos" style="font-weight:800;font-size:16px">' + F.formatBRL(selectedTotal) + '</span><button class="btn btn-ghost btn-sm" data-action="clear-selected-expenses">Limpar</button>' : '') +
+        '</div>';
+    }
+    html += '<div class="tx-list" style="margin-top:12px">' + (s.expenses.length ? s.expenses.map(function (e) { return txRow(e, { selectable: true }); }).join('') : emptyState('📭', 'Nenhuma despesa cadastrada para este mês.')) + '</div></div>';
 
     qs('#view-month').innerHTML = html;
   }
@@ -869,8 +885,8 @@
 
     if (a === 'goto') { setView(t.dataset.view); return; }
     if (a === 'close-modal') { closeModal(); return; }
-    if (a === 'month-prev') { monthCursor = F.addMonths(monthCursor, -1); calSelectedDay = null; renderCurrentView(); return; }
-    if (a === 'month-next') { monthCursor = F.addMonths(monthCursor, 1); calSelectedDay = null; renderCurrentView(); return; }
+    if (a === 'month-prev') { monthCursor = F.addMonths(monthCursor, -1); calSelectedDay = null; selectedExpenses = {}; renderCurrentView(); return; }
+    if (a === 'month-next') { monthCursor = F.addMonths(monthCursor, 1); calSelectedDay = null; selectedExpenses = {}; renderCurrentView(); return; }
     if (a === 'cal-day') { calSelectedDay = parseInt(t.dataset.day, 10); renderCalendar(); return; }
     if (a === 'toggle-theme') { toggleTheme(); return; }
 
@@ -880,6 +896,23 @@
     if (a === 'delete-extra') { deleteExtra(t.dataset.id); return; }
     if (a === 'delete-negotiable') { deleteNegotiable(t.dataset.id); return; }
     if (a === 'delete-pocket') { deletePocket(t.dataset.id); return; }
+
+    if (a === 'toggle-select-expense') {
+      if (t.checked) selectedExpenses[t.dataset.id] = true;
+      else delete selectedExpenses[t.dataset.id];
+      renderMonth();
+      return;
+    }
+    if (a === 'clear-selected-expenses') { selectedExpenses = {}; renderMonth(); return; }
+    if (a === 'cycle-priority') {
+      var order = ['urgent', 'important', 'negotiable'];
+      var debt = state.debtGroups.find(function (x) { return x.id === t.dataset.id; });
+      if (debt) {
+        debt.priority = order[(order.indexOf(debt.priority) + 1) % order.length];
+        persist(); renderCurrentView(); showToast('Prioridade: ' + F.priorityLabel(debt.priority));
+      }
+      return;
+    }
 
     if (a === 'edit-debt') {
       var d = state.debtGroups.find(function (x) { return x.id === t.dataset.id; });
