@@ -132,28 +132,62 @@
   function generateExpensesForMonth(state, monthKey) {
     var list = [];
     (state.debtGroups || []).forEach(function (debt) {
-      if (!isDebtActiveInMonth(debt, monthKey)) return;
-      var dueISO = monthDateISO(monthKey, debt.dueDay);
-      var ov = getOverride(state, debt.id, monthKey);
-      var instNum = installmentNumber(debt, monthKey);
-      list.push({
-        id: debt.id,
-        sourceId: debt.id,
-        monthKey: monthKey,
-        type: 'expense',
-        name: debt.name,
-        category: debt.category,
-        amount: debt.installmentValue,
-        dueDay: debt.dueDay,
-        dueISO: dueISO,
-        priority: debt.priority,
-        installmentCurrent: instNum,
-        installmentTotal: (debt.installments === null || debt.installments === undefined) ? null : debt.installments,
-        status: computeStatus(dueISO, ov),
-        paidDate: ov && ov.paidDate ? ov.paidDate : null,
-        notes: debt.notes || '',
-        recurring: (debt.installments === null || debt.installments === undefined)
-      });
+      if (isDebtActiveInMonth(debt, monthKey)) {
+        var dueISO = monthDateISO(monthKey, debt.dueDay);
+        var ov = getOverride(state, debt.id, monthKey);
+        var instNum = installmentNumber(debt, monthKey);
+        list.push({
+          id: debt.id,
+          sourceId: debt.id,
+          monthKey: monthKey,
+          type: 'expense',
+          name: debt.name,
+          category: debt.category,
+          amount: debt.installmentValue,
+          dueDay: debt.dueDay,
+          dueISO: dueISO,
+          priority: debt.priority,
+          installmentCurrent: instNum,
+          installmentTotal: (debt.installments === null || debt.installments === undefined) ? null : debt.installments,
+          status: computeStatus(dueISO, ov),
+          paidDate: ov && ov.paidDate ? ov.paidDate : null,
+          notes: debt.notes || '',
+          recurring: (debt.installments === null || debt.installments === undefined)
+        });
+      }
+
+      // Parcelas de meses já passados que ficaram sem marcar como pagas não podem simplesmente
+      // sumir do cálculo — continuam aparecendo (atrasadas) em todo mês seguinte até serem
+      // pagas. Só se aplica a dívidas com número de parcelas definido (recorrente sem fim já
+      // reaparece sozinha todo mês, não precisa disso).
+      if (debt.installments !== null && debt.installments !== undefined) {
+        var lastPastIdx = Math.min(debt.installments - 1, monthDiff(debt.startMonth, monthKey) - 1);
+        for (var idx = 0; idx <= lastPastIdx; idx++) {
+          var pastMonthKey = addMonths(debt.startMonth, idx);
+          var pastOv = getOverride(state, debt.id, pastMonthKey);
+          if (pastOv && pastOv.status === 'paid') continue;
+          var pastDueISO = monthDateISO(pastMonthKey, debt.dueDay);
+          list.push({
+            id: debt.id + '_carry_' + idx,
+            sourceId: debt.id,
+            monthKey: pastMonthKey,
+            type: 'expense',
+            name: debt.name,
+            category: debt.category,
+            amount: debt.installmentValue,
+            dueDay: debt.dueDay,
+            dueISO: pastDueISO,
+            priority: debt.priority,
+            installmentCurrent: idx + 1,
+            installmentTotal: debt.installments,
+            status: computeStatus(pastDueISO, pastOv),
+            paidDate: null,
+            notes: debt.notes || '',
+            recurring: false,
+            carried: true
+          });
+        }
+      }
     });
     list.sort(function (a, b) {
       var order = { urgent: 0, important: 1, negotiable: 2 };
