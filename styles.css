@@ -304,6 +304,13 @@ label{ font-size:12.5px; color:var(--text-2); font-weight:600; display:block; ma
 .priority-urgent{ background:var(--danger); }
 .priority-important{ background:var(--warning); }
 .priority-negotiable{ background:var(--teal); }
+
+.priority-group{ margin-bottom:16px; }
+.priority-group:last-child{ margin-bottom:0; }
+.priority-group-head{ display:flex; align-items:center; gap:7px; padding:0 2px 8px; }
+.priority-group-head .priority-dot{ width:9px; height:9px; }
+.priority-group-title{ font-size:12.5px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; color:var(--text-2); }
+.priority-group-total{ margin-left:auto; font-size:13px; font-weight:800; }
 .priority-chip{ display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border-radius:var(--radius-pill); border:1.5px solid var(--border); font-size:12.5px; font-weight:700; color:var(--text-2); }
 .priority-chip.selected{ border-color:currentColor; }
 .priority-chip[data-p="urgent"].selected{ color:var(--danger); background:var(--danger-soft); }

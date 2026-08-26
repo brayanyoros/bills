@@ -97,6 +97,31 @@
     return '<span class="priority-dot priority-' + p + '" title="' + F.priorityLabel(p) + '"></span>';
   }
 
+  var PRIORITY_ORDER = ['urgent', 'important', 'negotiable'];
+  // Agrupa itens (despesas do mês, dívidas cadastradas...) por prioridade, na ordem
+  // urgente > importante > negociável, pulando grupos vazios. amountFn calcula o
+  // subtotal exibido no cabeçalho de cada grupo.
+  function groupByPriority(items, amountFn) {
+    var buckets = {};
+    items.forEach(function (it) {
+      var p = it.priority || 'important';
+      (buckets[p] = buckets[p] || []).push(it);
+    });
+    return PRIORITY_ORDER.filter(function (p) { return buckets[p] && buckets[p].length; }).map(function (p) {
+      var groupItems = buckets[p];
+      var total = amountFn ? groupItems.reduce(function (sum, it) { return sum + amountFn(it); }, 0) : null;
+      return { key: p, label: F.priorityLabel(p), items: groupItems, total: total };
+    });
+  }
+
+  function priorityGroupHead(g) {
+    return '<div class="priority-group-head">' +
+      '<span class="priority-dot priority-' + g.key + '"></span>' +
+      '<span class="priority-group-title">' + g.label + '</span>' +
+      (g.total !== null ? '<span class="priority-group-total money neg">' + F.formatBRL(g.total) + '</span>' : '') +
+      '</div>';
+  }
+
   function txRow(e, opts) {
     opts = opts || {};
     var isIncome = e.type === 'income';
@@ -261,7 +286,16 @@
         (selectedIds.length ? '<span class="money pos" style="font-weight:800;font-size:16px">' + F.formatBRL(selectedTotal) + '</span><button class="btn btn-ghost btn-sm" data-action="clear-selected-expenses">Limpar</button>' : '') +
         '</div>';
     }
-    html += '<div class="tx-list" style="margin-top:12px">' + (s.expenses.length ? s.expenses.map(function (e) { return txRow(e, { selectable: true }); }).join('') : emptyState('📭', 'Nenhuma despesa cadastrada para este mês.')) + '</div></div>';
+    html += '<div style="margin-top:12px">';
+    if (s.expenses.length) {
+      html += groupByPriority(s.expenses, function (e) { return e.amount; }).map(function (g) {
+        return '<div class="priority-group">' + priorityGroupHead(g) +
+          '<div class="tx-list">' + g.items.map(function (e) { return txRow(e, { selectable: true }); }).join('') + '</div></div>';
+      }).join('');
+    } else {
+      html += emptyState('📭', 'Nenhuma despesa cadastrada para este mês.');
+    }
+    html += '</div></div>';
 
     qs('#view-month').innerHTML = html;
   }
@@ -318,12 +352,18 @@
      DÍVIDAS
      ============================================================ */
   function renderDebts() {
-    var order = { urgent: 0, important: 1, negotiable: 2 };
-    var debts = state.debtGroups.slice().sort(function (a, b) { return (order[a.priority] || 9) - (order[b.priority] || 9); });
+    var debts = state.debtGroups.slice();
     var timeline = F.buildBreathingTimeline(state);
 
-    var html = '<div class="card"><div class="section-head"><span class="section-title">Parcelamentos e contas ativas</span></div><div class="tx-list" style="margin-top:12px">';
-    html += debts.length ? debts.map(debtCard).join('') : emptyState('📄', 'Nenhuma dívida cadastrada.');
+    var html = '<div class="card"><div class="section-head"><span class="section-title">Parcelamentos e contas ativas</span></div><div style="margin-top:12px">';
+    if (debts.length) {
+      html += groupByPriority(debts, function (d) { return d.installmentValue; }).map(function (g) {
+        return '<div class="priority-group">' + priorityGroupHead(g) +
+          '<div class="tx-list">' + g.items.map(debtCard).join('') + '</div></div>';
+      }).join('');
+    } else {
+      html += emptyState('📄', 'Nenhuma dívida cadastrada.');
+    }
     html += '</div></div>';
 
     html += '<div class="card"><span class="section-title">Quando vou respirar?</span>';
@@ -354,7 +394,7 @@
       '<div class="tx-row-top" style="align-items:flex-start">' +
       '<div class="tx-day"><span class="tx-day-num">' + d.dueDay + '</span><span class="tx-day-mon">dia</span></div>' +
       '<div class="tx-info">' +
-      '<div class="tx-name">' + priorityDot(d.priority) + ' ' + escapeHtml(d.name) + '</div>' +
+      '<div class="tx-name">' + priorityDot(d.priority, d.id) + ' ' + escapeHtml(d.name) + '</div>' +
       '<div class="tx-meta"><span>' + F.formatBRL(d.installmentValue) + (d.installments ? '/mês' : '/mês (recorrente)') + '</span>' +
       (d.installments ? '<span>•</span><span>' + (d.installments === 1 ? 'Pagamento único' : (d.installments) + ' parcelas') + '</span>' : '') +
       (end ? '<span>•</span><span>termina em ' + F.monthKeyToLabel(end, true) + '</span>' : '') + '</div>' +
