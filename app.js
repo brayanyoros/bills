@@ -11,6 +11,7 @@
   var persistenceOk = S.testPersistence();
   var currentView = 'overview';
   var monthCursor = defaultMonthKey();
+  var overviewMonthCursor = defaultMonthKey();
   var charts = {};
   var selectedExpenses = {};
 
@@ -63,6 +64,7 @@
   };
 
   function setView(view) {
+    if (view === 'overview' && currentView !== 'overview') overviewMonthCursor = defaultMonthKey();
     currentView = view;
     qsa('.view').forEach(function (v) { v.hidden = (v.id !== 'view-' + view); });
     qsa('.nav-item').forEach(function (b) { b.classList.toggle('active', b.dataset.view === view); });
@@ -186,7 +188,8 @@
      VISÃO GERAL (Home)
      ============================================================ */
   function renderOverview() {
-    var mk = defaultMonthKey();
+    var mk = overviewMonthCursor;
+    var isCurrentMonth = mk === defaultMonthKey();
     var s = F.computeMonthSummary(state, mk);
     var remainingDebt = F.remainingDebtTotal(state, mk);
     var goalMonthly = (state.settings.extraIncomeWeeklyGoal || 0) * 4;
@@ -199,7 +202,13 @@
     html += '<div class="hero-card">' +
       '<div class="hero-greeting">' + greeting() + ' 👋</div>' +
       '<div class="hero-amount money">' + F.formatBRL(s.saldoDisponivel) + '</div>' +
-      '<div class="hero-caption">Disponível para usar em ' + F.monthKeyToLabel(mk).toLowerCase() + '</div>' +
+      '<div class="hero-caption-row">' +
+      '<button class="icon-btn btn-sm" data-action="overview-month-prev" title="Mês anterior">←</button>' +
+      '<span class="hero-caption">Disponível para usar em ' + F.monthKeyToLabel(mk).toLowerCase() + '</span>' +
+      '<button class="icon-btn btn-sm" data-action="overview-month-next" title="Próximo mês">→</button>' +
+      (isCurrentMonth ? '' : '<button class="btn btn-ghost btn-sm" data-action="overview-month-today">Hoje</button>') +
+      '</div>' +
+      (isCurrentMonth ? '' : '<div class="hero-caption" style="color:var(--warning);margin-top:2px">Projeção — considera tudo pago em dia até lá</div>') +
       '<div class="hero-sub-row">' +
       '<div class="hero-sub-item"><span class="hero-sub-label">Saldo em conta</span><span class="hero-sub-value money">' + F.formatBRL(s.saldoEmConta) + '</span></div>' +
       '<div class="hero-sub-item"><span class="hero-sub-label">Reservado para contas</span><span class="hero-sub-value money">' + F.formatBRL(s.expensesUnpaidPriority) + '</span></div>' +
@@ -986,6 +995,9 @@
     if (a === 'close-modal') { closeModal(); return; }
     if (a === 'month-prev') { monthCursor = F.addMonths(monthCursor, -1); calSelectedDay = null; selectedExpenses = {}; renderCurrentView(); return; }
     if (a === 'month-next') { monthCursor = F.addMonths(monthCursor, 1); calSelectedDay = null; selectedExpenses = {}; renderCurrentView(); return; }
+    if (a === 'overview-month-prev') { overviewMonthCursor = F.addMonths(overviewMonthCursor, -1); renderOverview(); return; }
+    if (a === 'overview-month-next') { overviewMonthCursor = F.addMonths(overviewMonthCursor, 1); renderOverview(); return; }
+    if (a === 'overview-month-today') { overviewMonthCursor = defaultMonthKey(); renderOverview(); return; }
     if (a === 'cal-day') { calSelectedDay = parseInt(t.dataset.day, 10); renderCalendar(); return; }
     if (a === 'toggle-theme') { toggleTheme(); return; }
 

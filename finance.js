@@ -230,7 +230,12 @@
     if (compareMonthKey(monthKey, epoch) < 0) return 0;
     var prev = addMonths(monthKey, -1);
     var prevSummary = computeMonthSummary(state, prev);
-    return prevSummary.saldoEmConta;
+    // Mês anterior já em curso (ou já passado): usa o saldo real, só o que foi de fato pago.
+    // Mês anterior ainda no futuro (espiando vários meses à frente): ainda não dá pra saber o
+    // que vai ser pago de fato, então assume que tudo é honrado em dia — senão o saldo projetado
+    // infla sem parar (nada "pago" ainda em meses que nem chegaram).
+    if (compareMonthKey(prev, todayMonthKey()) <= 0) return prevSummary.saldoEmConta;
+    return prevSummary.saldoMes;
   }
 
   function generateIncomesForMonth(state, monthKey, includeCaixaAnterior) {
